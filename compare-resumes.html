@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compare Resumes — IntelliResume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-wrapper">
+    <div class="bg-glow" style="top:20%;left:30%"></div>
+    <div class="bg-glow" style="top:60%;left:65%;background:radial-gradient(rgba(147,51,234,0.15),rgba(147,51,234,0));opacity:0.3"></div>
+  </div>
+
+  <nav>
+    <div class="logo" onclick="window.location.href='index.html'">IntelliResume</div>
+    <div class="nav-right">
+      <button id="darkModeBtn" class="icon-btn">🌙</button>
+      <button class="btn-text" onclick="window.location.href='index.html'">← Home</button>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-badge">Multi-Resume</div>
+      <h1>Compare <span class="grad-text">Resumes</span></h1>
+      <p>Upload 2–5 resumes and instantly rank them by ATS score, keyword match, and section completeness.</p>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="window.location.href='single-analysis.html'">Single Analysis</button>
+      <button class="tab-btn active">Compare Resumes</button>
+      <button class="tab-btn" onclick="window.location.href='keywords-tips.html'">Keywords &amp; Tips</button>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="glass-card">
+      <div class="card-title">Upload Resumes to Compare</div>
+      <form id="compareForm">
+        <div class="input-group">
+          <label>Select a Resume PDF (add one at a time, 2–5 files)</label>
+          <input type="file" id="fileInput" accept=".pdf"/>
+          <button type="button" id="addFileBtn" class="btn-secondary" style="width:auto;margin-top:12px">+ Add Resume</button>
+        </div>
+
+        <div id="fileManagerBox" class="file-manager hidden">
+          <div class="file-manager-hd">Added Resumes</div>
+          <div id="fileList"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Custom Keywords (Optional)</label>
+          <input type="text" id="compareKw" placeholder="e.g., Java, Spring Boot, AWS (comma-separated)"/>
+        </div>
+
+        <button type="submit" class="btn-primary">⚖️ Compare Resumes</button>
+      </form>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingBox" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Comparing resumes...</p>
+    </div>
+
+    <!-- Results -->
+    <div id="resultArea" class="glass-card hidden">
+      <div class="card-title">Comparison Results — Ranked by ATS Score</div>
+      <table class="comparison-table" id="resultTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>File</th>
+            <th>ATS Score</th>
+            <th>Keywords Matched</th>
+            <th>Sections Found</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+      <div class="button-group" style="margin-top:20px">
+        <button id="resetBtn" class="btn-secondary">🔄 Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ── Dark mode ─────────────────────────────────────── */
+  const darkBtn = document.getElementById('darkModeBtn');
+  if (localStorage.getItem('darkMode') === 'on') {
+    document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+    darkBtn.textContent = '☀️';
+  }
+  darkBtn.addEventListener('click', () => {
+    const on = localStorage.getItem('darkMode') === 'on';
+    if (on) { document.body.style.filter = ''; localStorage.setItem('darkMode','off'); darkBtn.textContent='🌙'; }
+    else { document.body.style.filter='invert(1) hue-rotate(180deg)'; localStorage.setItem('darkMode','on'); darkBtn.textContent='☀️'; }
+  });
+
+  /* ── File manager ──────────────────────────────────── */
+  let files = [];
+
+  document.getElementById('addFileBtn').addEventListener('click', () => {
+    const fi = document.getElementById('fileInput');
+    if (!fi.files.length) { alert('Please select a PDF file first.'); return; }
+    if (files.length >= 5) { alert('Maximum 5 files allowed.'); return; }
+    const f = fi.files[0];
+    if (files.some(x => x.name === f.name && x.size === f.size)) { alert('This file is already added.'); fi.value = ''; return; }
+    files.push(f);
+    renderFileList();
+    fi.value = '';
+  });
+
+  // Auto-add on file picker change
+  document.getElementById('fileInput').addEventListener('change', () => {
+    if (document.getElementById('fileInput').files.length) document.getElementById('addFileBtn').click();
+  });
+
+  function renderFileList() {
+    const box = document.getElementById('fileManagerBox');
+    const list = document.getElementById('fileList');
+    if (!files.length) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    list.innerHTML = files.map((f, i) => `
+      <div class="file-item">
+        <div class="file-info">
+          <div class="file-name">${f.name}</div>
+          <div class="file-size">${(f.size / 1024 / 1024).toFixed(2)} MB</div>
+        </div>
+        <button type="button" class="remove-file-btn" data-i="${i}">Remove</button>
+      </div>`).join('');
+    list.querySelectorAll('.remove-file-btn').forEach(btn =>
+      btn.addEventListener('click', () => { files.splice(parseInt(btn.dataset.i), 1); renderFileList(); })
+    );
+  }
+
+  /* ── Submit ────────────────────────────────────────── */
+  document.getElementById('compareForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (files.length < 2) { alert('Please add at least 2 resume files.'); return; }
+
+    const fd = new FormData();
+    files.forEach(f => fd.append('resumes', f));
+    const kw = document.getElementById('compareKw').value.trim();
+    if (kw) fd.append('customKeywords', kw);
+
+    document.getElementById('loadingBox').classList.remove('hidden');
+    document.getElementById('resultArea').classList.add('hidden');
+
+    try {
+      const res  = await fetch('/compare', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) { alert('Error: ' + (data.error || 'Comparison failed.')); return; }
+      renderResults(data);
+      document.getElementById('resultArea').classList.remove('hidden');
+      document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    } finally {
+      document.getElementById('loadingBox').classList.add('hidden');
+    }
+  });
+
+  function renderResults(data) {
+    const medals = ['🥇', '🥈', '🥉', '4th', '5th'];
+    document.getElementById('resultBody').innerHTML = data.comparison
+      .sort((a, b) => b.score - a.score)
+      .map((item, i) => `
+        <tr>
+          <td>${medals[i] || (i + 1) + 'th'}</td>
+          <td>${item.filename}</td>
+          <td class="cmp-score">${item.score}</td>
+          <td>${item.keywordMatch}</td>
+          <td>${(item.sections || []).join(', ') || '—'}</td>
+        </tr>`).join('');
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    files = [];
+    renderFileList();
+    document.getElementById('compareForm').reset();
+    document.getElementById('resultArea').classList.add('hidden');
+  });
+  </script>
+</body>
+</html>

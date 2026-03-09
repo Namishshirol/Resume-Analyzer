@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliResume | Smart Resume Analytics</title>
+    <!-- Premium Font: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-glow: conic-gradient(from 180deg at 50% 50%, #16abff33 0deg, #0885ff33 55deg, #54d6ff33 120deg, #0071ff33 160deg, transparent 360deg);
+            --secondary-glow: radial-gradient(rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+            --accent: #00d2ff;
+            --accent-purple: #9d50bb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        body {
+            background-color: #030712;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Animated Mesh Background */
+        .bg-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 50% -20%, #1e293b, #030712);
+        }
+
+        .bg-glow {
+            position: absolute;
+            width: 800px;
+            height: 600px;
+            background: var(--primary-glow);
+            filter: blur(100px);
+            opacity: 0.5;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* --- Navbar --- */
+        nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-auth {
+            display: flex;
+            gap: 15px;
+            
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+        }
+
+        .btn-nav-primary {
+            background: #fff;
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-nav-primary:hover {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            padding-top: 80px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 400;
+            line-height: 1;
+            max-width: 900px;
+            margin-bottom: 24px;
+            letter-spacing: -0.04em;
+            font-family:'Times New Roman', Times, serif     }
+
+        .grad-text {
+            background: linear-gradient(to right, var(--accent), #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subheading {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            max-width: 650px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            font-weight: 400;
+            font-family: 'Times-Italic';
+        }
+
+        /* --- CTA Buttons --- */
+        .cta-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-hero {
+            padding: 16px 36px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 210, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ── Animated floating card preview ── */
+        .card-preview {
+            margin-top: 60px;
+            width: 80%;
+            max-width: 800px;
+            height: 200px;
+            background: linear-gradient(rgba(255,255,255,0.05), transparent);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-bottom: none;
+            border-radius: 24px 24px 0 0;
+            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            animation: floatUp 4s ease-in-out infinite alternate;
+        }
+        @keyframes floatUp {
+            from { transform: translateY(0px); }
+            to   { transform: translateY(-10px); }
+        }
+
+        /* ── Title word animations ── */
+        .hero h1 { overflow: visible; }
+        .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: wordFadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes wordFadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Badge pulse ── */
+        .badge {
+            animation: badgePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+            position: relative;
+        }
+        .badge::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 100px;
+            border: 1px solid rgba(0,210,255,0.3);
+            animation: badgePulse 3s ease-in-out infinite;
+        }
+        @keyframes badgePop {
+            from { opacity: 0; transform: scale(0.85); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes badgePulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0; transform: scale(1.12); }
+        }
+
+        /* ── Subheading slide in ── */
+        .subheading {
+            opacity: 0;
+            transform: translateY(16px);
+            animation: subFade 0.7s ease 1.0s forwards;
+        }
+        @keyframes subFade {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── CTA buttons entrance ── */
+        .cta-container {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: ctaFade 0.6s ease 1.3s forwards;
+        }
+        @keyframes ctaFade {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Gradient shimmer on primary button ── */
+        .btn-primary {
+            background-size: 200% auto;
+            background-image: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 40%, #9333ea 60%, #3a7bd5 80%, #00d2ff 100%);
+            animation: shimmer 4s linear infinite;
+        }
+        @keyframes shimmer {
+            from { background-position: 0% center; }
+            to   { background-position: 200% center; }
+        }
+
+        /* ── Floating particles ── */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            width: 2px; height: 2px;
+            border-radius: 50%;
+            background: rgba(0,210,255,0.5);
+            animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 0.5; }
+            100% { transform: translateY(-50px) scale(1); opacity: 0; }
+        }
+
+        /* ── Typewriter cursor on h1 ── */
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 0.8em;
+            background: #00d2ff;
+            border-radius: 1px;
+            vertical-align: middle;
+            margin-left: 4px;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
+
+        /* ── Stats bar beneath buttons ── */
+        .stats-strip {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+            opacity: 0;
+            animation: ctaFade 0.6s ease 1.6s forwards;
+        }
+        .stat-item { text-align: center; }
+        .stat-item strong {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #00d2ff, #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-item span {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        .stat-div {
+            width: 1px;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            align-self: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-wrapper">
+        <div class="bg-glow" style="top: 20%; left: 30%;"></div>
+        <div class="bg-glow" style="top: 60%; left: 70%; background: var(--secondary-glow); opacity: 0.2;"></div>
+    </div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Floating Navbar -->
+    <nav>
+        <div class="logo">IntelliResume</div>
+        <div class="nav-links">
+           
+ 
+            
+            
+        </div>
+        
+    </nav>
+
+    <!-- Hero Content -->
+    <main class="hero">
+        <br><br>
+        
+        <div class="badge">✦ ATS Resume Intelligence</div>
+        
+        <h1 id="heroTitle"></h1>
+        
+        <p class="subheading">
+            Stop guessing and start getting hired. Analyze your resume with smart insights, keyword optimization, and professional AI-driven suggestions.
+        </p>
+        
+        <div class="cta-container">
+            <button class="btn-hero btn-primary" onclick="window.location.href='features.html'">Start Analyzing Now</button>
+            <button class="btn-hero btn-secondary" onclick="window.location.href='tamplets.html'">Explore Templates</button>
+        </div>
+
+        <div class="stats-strip">
+            <div class="stat-item"><strong>98%</strong><span>ATS Compatible</span></div>
+            <div class="stat-div"></div>
+            <div class="stat-item"><strong>6+</strong><span>Industries</span></div>
+            <div class="stat-div"></div>
+            <div class="stat-item"><strong>AI</strong><span>GPT-Powered</span></div>
+        </div>
+
+        <!-- This visual element makes it look like a real app -->
+        <div class="card-preview"></div>
+    </main>
+
+    <script>
+    /* ── Animated title ── */
+    const titleWords = ['Transform', 'Your', 'Resume.', 'Elevate', 'Your', 'Career.'];
+    const h1 = document.getElementById('heroTitle');
+    const gradWords = new Set(['Resume.', 'Career.']);
+
+    titleWords.forEach((word, i) => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.style.animationDelay = (0.3 + i * 0.13) + 's';
+      span.style.marginRight = (word === 'Resume.' || word === 'Your' && i > 2) ? '0' : '0.25em';
+
+      if (gradWords.has(word)) {
+        span.style.background = 'linear-gradient(to right, #00d2ff, #9333ea)';
+        span.style.webkitBackgroundClip = 'text';
+        span.style.webkitTextFillColor = 'transparent';
+        span.style.backgroundClip = 'text';
+      }
+      span.textContent = word + ' ';
+
+      // Line break between "Resume." and "Elevate"
+      if (i === 2) {
+        h1.appendChild(span);
+        h1.appendChild(document.createElement('br'));
+        return;
+      }
+      h1.appendChild(span);
+    });
+
+    /* ── Floating particles ── */
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 22; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.width = p.style.height = (Math.random() * 3 + 1) + 'px';
+      p.style.animationDuration = (Math.random() * 12 + 8) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      // Alternate color between cyan and purple
+      p.style.background = i % 3 === 0 ? 'rgba(147,51,234,0.5)' : 'rgba(0,210,255,0.5)';
+      container.appendChild(p);
+    }
+    </script>
+
+</body>
+</html>

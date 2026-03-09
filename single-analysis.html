@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Single Analysis — IntelliResume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <div class="bg-wrapper">
+    <div class="bg-glow" style="top:15%;left:20%"></div>
+    <div class="bg-glow" style="top:60%;left:70%;background:radial-gradient(rgba(147,51,234,0.15),rgba(147,51,234,0));opacity:0.3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo" onclick="window.location.href='index.html'">IntelliResume</div>
+    <div class="nav-right">
+      <button id="historyBtn" class="icon-btn">📋 History</button>
+      <button id="darkModeBtn" class="icon-btn">🌙</button>
+      <button class="btn-text" onclick="window.location.href='index.html'">← Home</button>
+    </div>
+  </nav>
+
+  <div class="page-container">
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="page-badge">ATS Analyzer</div>
+      <h1>Analyze Your <span class="grad-text">Resume</span></h1>
+      <p>Upload your PDF and get an instant ATS score, keyword gaps, and smart improvement suggestions.</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+      <button class="tab-btn active">Single Analysis</button>
+      <button class="tab-btn" onclick="window.location.href='compare-resumes.html'">Compare Resumes</button>
+      <button class="tab-btn" onclick="window.location.href='keywords-tips.html'">Keywords &amp; Tips</button>
+    </div>
+
+    <!-- UPLOAD FORM -->
+    <div class="glass-card">
+      <div class="card-title">Upload Resume</div>
+      <form id="uploadForm">
+
+        <div class="input-group">
+          <label>Resume PDF *</label>
+          <input type="file" id="resumeFile" accept=".pdf" required/>
+        </div>
+
+        <div class="input-group">
+          <label>Job Description <span style="color:#64748b;font-weight:400">(optional — boosts keyword matching)</span></label>
+          <textarea id="jobDesc" placeholder="Paste the full job posting here..." rows="4"></textarea>
+          <div id="liveTipsBox" class="live-tips hidden">
+            <div class="live-tips-hd">💡 Live Tips</div>
+            <div id="liveTipsContent"></div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Custom Keywords <span style="color:#64748b;font-weight:400">(optional, comma-separated)</span></label>
+          <input type="text" id="customKw" placeholder="e.g., Java, Spring Boot, AWS, Docker"/>
+        </div>
+
+        <div class="input-group">
+          <label>Industry</label>
+          <select id="industry">
+            <option value="tech">Tech &amp; Software</option>
+            <option value="data">Data Science</option>
+            <option value="devops">DevOps</option>
+            <option value="frontend">Frontend Development</option>
+            <option value="marketing">Marketing</option>
+            <option value="product">Product Management</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" id="analyzeBtn">🔍 Analyze Resume</button>
+      </form>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadingBox" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Analyzing your resume — hang tight...</p>
+    </div>
+
+    <!-- ERROR -->
+    <div id="errorBox" class="hidden" style="padding:18px 22px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.25);border-radius:14px;color:#f87171;font-size:0.88rem;margin-bottom:20px"></div>
+
+    <!-- RESULTS -->
+    <div id="resultArea" class="hidden">
+
+      <!-- SCORE -->
+      <div class="score-box">
+        <div class="score-number" id="scoreDisplay">0</div>
+        <div class="score-label">out of 100 — ATS Compatibility Score</div>
+        <div class="score-breakdown" style="margin-top:22px">
+          <div class="breakdown-item">
+            <span class="label">Keywords</span>
+            <div class="bar"><div class="bar-fill" id="barKeywords"></div></div>
+            <span class="pct" id="pctKeywords">0%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="label">Sections</span>
+            <div class="bar"><div class="bar-fill" id="barSections"></div></div>
+            <span class="pct" id="pctSections">0%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="label">Formatting</span>
+            <div class="bar"><div class="bar-fill" id="barFormatting"></div></div>
+            <span class="pct" id="pctFormatting">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOB MATCH -->
+      <div id="jobMatchCard" class="glass-card hidden">
+        <div class="card-title">Job Match Score</div>
+        <div class="match-score" id="jobMatchVal">0%</div>
+        <p style="color:#94a3b8;font-size:0.82rem;margin-top:8px">Keyword overlap with the job description you provided</p>
+      </div>
+
+      <!-- FOUND KEYWORDS -->
+      <div class="glass-card">
+        <div class="card-title">Matched Keywords — <span id="foundCount">0</span> found</div>
+        <div id="foundKeywords" class="keyword-tags"></div>
+      </div>
+
+      <!-- MISSING KEYWORDS -->
+      <div class="glass-card">
+        <div class="card-title">Missing Keywords — <span id="missingCount">0</span> gaps</div>
+        <div id="missingKeywords" class="keyword-tags"></div>
+      </div>
+
+      <!-- SECTIONS -->
+      <div class="glass-card">
+        <div class="card-title">Sections Detected</div>
+        <div id="sectionsList" class="keyword-tags"></div>
+      </div>
+
+      <!-- SECTION ANALYSIS -->
+      <div class="glass-card">
+        <div class="card-title">Section-by-Section Analysis</div>
+        <div id="sectionAnalysis"></div>
+      </div>
+
+      <!-- SKILLS -->
+      <div class="glass-card">
+        <div class="card-title">Extracted Skills</div>
+        <div id="extractedSkills" class="keyword-tags"></div>
+      </div>
+
+      <!-- CHART -->
+      <div class="glass-card">
+        <div class="card-title">Keyword Density Chart</div>
+        <canvas id="densityChart" style="max-height:260px"></canvas>
+      </div>
+
+      <!-- IMPROVEMENT TIPS -->
+      <div class="glass-card">
+        <div class="card-title">Improvement Tips</div>
+        <div id="improvementTips"></div>
+      </div>
+
+      <!-- SMART SUGGESTIONS -->
+      <div class="glass-card">
+        <div class="card-title">Smart Suggestions</div>
+        <div id="smartSuggestions"></div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="glass-card">
+        <div class="card-title">Export Results</div>
+        <div class="button-group">
+          <button id="btnJson"  class="btn-secondary">📥 Download JSON</button>
+          <button id="btnPdf"   class="btn-secondary">📄 Export PDF</button>
+          <button id="btnReset" class="btn-secondary">🔄 New Analysis</button>
+        </div>
+      </div>
+
+    </div><!-- /resultArea -->
+  </div><!-- /page-container -->
+
+  <!-- HISTORY MODAL -->
+  <div id="historyModal" class="modal hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📋 Analysis History</h3>
+        <button class="close-btn" onclick="document.getElementById('historyModal').classList.add('hidden')">&times;</button>
+      </div>
+      <div class="modal-body" id="historyList"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="clearHistory">🗑 Clear All</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   DARK MODE
+═══════════════════════════════════════════ */
+(function() {
+  const btn = document.getElementById('darkModeBtn');
+  function applyDark(on) {
+    document.body.style.filter = on ? 'invert(1) hue-rotate(180deg)' : '';
+    btn.textContent = on ? '☀️' : '🌙';
+  }
+  applyDark(localStorage.getItem('darkMode') === 'on');
+  btn.addEventListener('click', function() {
+    const on = localStorage.getItem('darkMode') === 'on';
+    localStorage.setItem('darkMode', on ? 'off' : 'on');
+    applyDark(!on);
+  });
+})();
+
+/* ═══════════════════════════════════════════
+   LIVE TIPS
+═══════════════════════════════════════════ */
+document.getElementById('jobDesc').addEventListener('input', updateLiveTips);
+document.getElementById('customKw').addEventListener('input', updateLiveTips);
+
+function updateLiveTips() {
+  var jd   = document.getElementById('jobDesc').value.trim().toLowerCase();
+  var kw   = document.getElementById('customKw').value.trim();
+  var tips = [];
+  if (jd.length > 0 && jd.length < 60)              tips.push('📝 Add more job description text for better keyword analysis.');
+  if (/senior|lead|director|principal/.test(jd))     tips.push('💼 Senior role — highlight leadership and strategy experience.');
+  if (/junior|entry|graduate|fresher/.test(jd))      tips.push('🎓 Entry-level — focus on projects, internships, and eagerness to learn.');
+  if (/agile|scrum|sprint/.test(jd))                 tips.push('🔄 Agile required — mention sprint experience and backlog refinement.');
+  if (/aws|azure|gcp|cloud/.test(jd))                tips.push('☁️ Cloud skills needed — list specific services (EC2, S3, Lambda, etc.).');
+  if (/remote|wfh/.test(jd))                         tips.push('🏠 Remote role — emphasize async communication skills.');
+  var n = kw.split(',').filter(function(k){ return k.trim(); }).length;
+  if (n > 0) tips.push('🎯 ' + n + ' custom keyword(s) added — make sure each appears in your resume.');
+
+  var box = document.getElementById('liveTipsBox');
+  if (!tips.length) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  document.getElementById('liveTipsContent').innerHTML =
+    tips.map(function(t){ return '<div class="live-tip-row">' + t + '</div>'; }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   FORM SUBMIT
+═══════════════════════════════════════════ */
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  var file = document.getElementById('resumeFile').files[0];
+  if (!file) { showError('Please select a PDF file.'); return; }
+  if (!file.name.toLowerCase().endsWith('.pdf')) { showError('Only PDF files are supported.'); return; }
+
+  var fd = new FormData();
+  fd.append('resume',          file);
+  fd.append('jobDescription',  document.getElementById('jobDesc').value);
+  fd.append('customKeywords',  document.getElementById('customKw').value);
+  fd.append('industry',        document.getElementById('industry').value);
+
+  hideError();
+  document.getElementById('loadingBox').classList.remove('hidden');
+  document.getElementById('resultArea').classList.add('hidden');
+  document.getElementById('analyzeBtn').disabled = true;
+
+  try {
+    var res  = await fetch('/analyze', { method: 'POST', body: fd });
+    var data = await res.json();
+
+    if (!res.ok) {
+      showError('Server error: ' + (data.error || 'Analysis failed. Make sure the server is running.'));
+      return;
+    }
+
+    renderResults(data);
+    window._lastResult = data;
+    saveHistory(data);
+
+    document.getElementById('resultArea').classList.remove('hidden');
+    document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    showError('Could not reach the server. Make sure it is running on port 9000. (' + err.message + ')');
+  } finally {
+    document.getElementById('loadingBox').classList.add('hidden');
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+});
+
+/* ═══════════════════════════════════════════
+   RENDER RESULTS
+═══════════════════════════════════════════ */
+var chartInst = null;
+
+function renderResults(d) {
+  /* Score */
+  document.getElementById('scoreDisplay').textContent = d.score || 0;
+
+  var bk = d.breakdown || {};
+  var kp = Math.min(100, Math.round(((bk.keywordScore    || 0) / 50) * 100));
+  var sp = Math.min(100, Math.round(((bk.sectionScore    || 0) / 25) * 100));
+  var fp = Math.min(100, Math.round(((bk.formattingScore || 0) / 15) * 100));
+
+  setTimeout(function() {
+    document.getElementById('barKeywords').style.width   = kp + '%';
+    document.getElementById('barSections').style.width   = sp + '%';
+    document.getElementById('barFormatting').style.width = fp + '%';
+  }, 120);
+  document.getElementById('pctKeywords').textContent   = kp + '%';
+  document.getElementById('pctSections').textContent   = sp + '%';
+  document.getElementById('pctFormatting').textContent = fp + '%';
+
+  /* Job match */
+  if (d.jobMatchScore != null) {
+    document.getElementById('jobMatchCard').classList.remove('hidden');
+    document.getElementById('jobMatchVal').textContent = d.jobMatchScore + '%';
+  } else {
+    document.getElementById('jobMatchCard').classList.add('hidden');
+  }
+
+  /* Found keywords */
+  var found   = d.foundKeywords || [];
+  var missing = (d.skillGap && d.skillGap.missing) || [];
+  document.getElementById('foundCount').textContent   = found.length;
+  document.getElementById('missingCount').textContent = missing.length;
+
+  document.getElementById('foundKeywords').innerHTML = found.length
+    ? found.map(function(k){ return '<span class="keyword-tag found">' + esc(k) + '</span>'; }).join('')
+    : '<span style="color:#64748b;font-size:0.83rem">None matched from the industry keyword list</span>';
+
+  document.getElementById('missingKeywords').innerHTML = missing.length
+    ? missing.slice(0, 16).map(function(k){ return '<span class="keyword-tag missing">' + esc(k) + '</span>'; }).join('')
+    : '<span style="color:#4ade80;font-size:0.83rem">✓ No keyword gaps detected</span>';
+
+  /* Sections */
+  var secs = d.foundSections || [];
+  document.getElementById('sectionsList').innerHTML = secs.length
+    ? secs.map(function(s){ return '<span class="keyword-tag section">' + esc(s) + '</span>'; }).join('')
+    : '<span style="color:#64748b;font-size:0.83rem">No standard sections detected</span>';
+
+  /* Section analysis */
+  var sa = d.sectionAnalysis || {};
+  var saKeys = Object.keys(sa);
+  if (saKeys.length > 0) {
+    document.getElementById('sectionAnalysis').innerHTML = saKeys.map(function(name) {
+      var info = sa[name];
+      var errs  = (info.errors       || []).map(function(e){ return '<div class="sec-err">⚠ ' + esc(e) + '</div>'; }).join('');
+      var imps  = (info.improvements || []).map(function(i){ return '<div class="sec-fix">💡 ' + esc(i) + '</div>'; }).join('');
+      var good  = (!errs && !imps) ? '<div style="color:#4ade80;font-size:0.82rem">✓ Looks good</div>' : '';
+      return '<div class="sec-block"><h4>' + esc(name) + '</h4>' + errs + imps + good + '</div>';
+    }).join('');
+  } else {
+    document.getElementById('sectionAnalysis').innerHTML =
+      '<div style="color:#64748b;font-size:0.85rem;padding:8px 0">Ensure your resume has clearly labelled sections: Education, Experience, Skills, Projects.</div>';
+  }
+
+  /* Skills */
+  var skills = (d.extractedSkills || []).slice(0, 18);
+  document.getElementById('extractedSkills').innerHTML = skills.length
+    ? skills.map(function(s){ return '<span class="keyword-tag skill">' + esc(s) + '</span>'; }).join('')
+    : '<span style="color:#64748b;font-size:0.83rem">No skills extracted — add a Skills section with explicit skill names</span>';
+
+  /* Improvement tips */
+  document.getElementById('improvementTips').innerHTML =
+    (d.improvementTips || []).map(function(t){ return '<div class="tip-item">' + esc(t) + '</div>'; }).join('') ||
+    '<div style="color:#64748b;font-size:0.85rem">No tips generated</div>';
+
+  /* Smart suggestions */
+  renderSmartSuggestions(d);
+
+  /* Chart */
+  var ctx     = document.getElementById('densityChart').getContext('2d');
+  var cfound  = found.slice(0, 10);
+  var cmiss   = missing.slice(0, 5);
+  var labels  = cfound.concat(cmiss);
+  var vals    = cfound.map(function(){ return 1; }).concat(cmiss.map(function(){ return 0; }));
+  var colors  = vals.map(function(v){ return v ? 'rgba(74,222,128,0.75)' : 'rgba(248,113,113,0.75)'; });
+
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  if (labels.length > 0) {
+    chartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ data: vals, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(c){ return c.raw ? '✅ Found in resume' : '❌ Missing'; } } }
+        },
+        scales: {
+          x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { max: 1.3, ticks: { callback: function(v){ return v===1?'Found':v===0?'Missing':''; }, color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SMART SUGGESTIONS ENGINE
+═══════════════════════════════════════════ */
+function renderSmartSuggestions(d) {
+  var box  = document.getElementById('smartSuggestions');
+  var tips = buildSuggestions(d);
+
+  box.innerHTML = tips.map(function(s, i) {
+    var delay = (i * 0.07).toFixed(2);
+    return [
+      '<div style="display:flex;align-items:flex-start;gap:13px;',
+      'padding:14px 16px;',
+      'background:rgba(0,210,255,0.03);',
+      'border:1px solid rgba(0,210,255,0.10);',
+      'border-left:3px solid rgba(0,210,255,0.4);',
+      'border-radius:0 10px 10px 0;',
+      'margin-bottom:9px;',
+      'animation:fadeUp 0.4s ' + delay + 's ease both;',
+      'cursor:default"',
+      ' onmouseover="this.style.background=\'rgba(0,210,255,0.07)\'"',
+      ' onmouseout="this.style.background=\'rgba(0,210,255,0.03)\'"',
+      '>',
+      '<span style="font-size:1.15rem;flex-shrink:0;margin-top:1px">' + s.icon + '</span>',
+      '<div>',
+      '<div style="font-size:0.87rem;font-weight:700;color:#fff;margin-bottom:3px">' + esc(s.title) + '</div>',
+      '<div style="font-size:0.83rem;color:#94a3b8;line-height:1.65">' + s.body + '</div>',
+      '</div></div>'
+    ].join('');
+  }).join('');
+}
+
+function buildSuggestions(d) {
+  var tips    = [];
+  var score   = d.score   || 0;
+  var found   = d.foundKeywords || [];
+  var missing = (d.skillGap && d.skillGap.missing) || [];
+  var secs    = d.foundSections  || [];
+  var skills  = d.extractedSkills || [];
+  var bk      = d.breakdown || {};
+  var kwScore = bk.keywordScore    || 0;
+  var fmtScore= bk.formattingScore || 0;
+  var jobMatch= d.jobMatchScore;
+
+  /* Overall score */
+  if (score >= 80) {
+    tips.push({ icon: '🏆', title: 'Strong ATS Score — ' + score + '/100', body: 'Excellent result. Keep tailoring keywords to each specific job posting for even higher match rates.' });
+  } else if (score >= 60) {
+    tips.push({ icon: '📈', title: 'Good Foundation (' + score + '/100) — Room to Grow', body: 'Solid score. Fixing the gaps below could push you into the 80+ range that most ATS systems prefer.' });
+  } else {
+    tips.push({ icon: '⚠️', title: 'Score Needs Work — ' + score + '/100', body: 'Many ATS systems filter resumes below 60. Work through the suggestions below to improve your chances.' });
+  }
+
+  /* Keywords */
+  if (kwScore < 20) {
+    tips.push({ icon: '🔑', title: 'Critical Keyword Gap', body: 'Only ' + found.length + ' industry keywords found. ATS ranks keyword density heavily. Add: <strong style="color:#fff">' + esc(missing.slice(0,5).join(', ')) + '</strong>' + (missing.length > 5 ? '...' : '') + ' naturally in your text.' });
+  } else if (kwScore < 35) {
+    tips.push({ icon: '🔍', title: 'Boost Keyword Coverage', body: found.length + ' keywords matched but ' + missing.length + ' still missing. Weave in: <strong style="color:#fff">' + esc(missing.slice(0,4).join(', ')) + '</strong> to score higher.' });
+  } else {
+    tips.push({ icon: '✅', title: 'Strong Keyword Coverage', body: found.length + ' keywords matched. Tailor to each job description for best results.' });
+  }
+
+  /* Top missing keywords */
+  if (missing.length > 0) {
+    tips.push({ icon: '📋', title: 'Priority Keywords to Add', body: 'Missing from your resume: <strong style="color:#fff">' + esc(missing.slice(0,6).join(', ')) + '</strong>. Add them to your Skills section and mention them naturally in experience bullets.' });
+  }
+
+  /* Sections */
+  var allSecs     = ['Education','Experience','Skills','Projects'];
+  var missingSecs = allSecs.filter(function(s){ return !secs.includes(s); });
+  if (missingSecs.length > 0) {
+    tips.push({ icon: '📂', title: 'Add Missing Sections', body: 'Your resume is missing: <strong style="color:#fff">' + missingSecs.join(', ') + '</strong>. Use these exact header names — ATS parsers look for standard labels.' });
+  } else {
+    tips.push({ icon: '✅', title: 'All Core Sections Present', body: 'Education, Experience, Skills, and Projects are all detected. Ensure each section has detailed, keyword-rich content.' });
+  }
+
+  /* Formatting */
+  if (fmtScore < 8) {
+    tips.push({ icon: '🎨', title: 'Formatting Issues Detected', body: 'Your resume may be missing contact information, LinkedIn/GitHub links, or a professional summary — all quick wins for a higher score.' });
+  } else if (fmtScore < 12) {
+    tips.push({ icon: '🔗', title: 'Add Professional Links', body: 'Include your LinkedIn profile URL and GitHub or portfolio link in the header. Recruiters check these within the first 30 seconds.' });
+  }
+
+  /* Job match */
+  if (jobMatch !== null && jobMatch !== undefined) {
+    if (jobMatch < 40) {
+      tips.push({ icon: '🎯', title: 'Low Job Match — ' + jobMatch + '%', body: 'Your resume overlaps less than 40% with the job description. Mirror the exact wording from the posting — ATS compares your resume to the spec word-for-word.' });
+    } else if (jobMatch < 70) {
+      tips.push({ icon: '🎯', title: 'Decent Job Match — ' + jobMatch + '%', body: 'Good overlap but room to improve. Scan the posting for specific tools and responsibilities you have not mentioned yet.' });
+    } else {
+      tips.push({ icon: '🎯', title: 'Strong Job Match — ' + jobMatch + '%', body: 'Excellent alignment with the job description. This resume is well-tailored — submit with confidence.' });
+    }
+  }
+
+  /* Skills */
+  if (skills.length < 5) {
+    tips.push({ icon: '🛠️', title: 'Expand Your Skills Section', body: 'Very few skills were detected. Create a dedicated Skills section with 12–15 specific technologies, tools, and frameworks grouped by category.' });
+  } else if (skills.length < 10) {
+    tips.push({ icon: '🛠️', title: 'List More Specific Skills', body: skills.length + ' skills found. Most roles expect 15–20. Add cloud platforms, testing frameworks, and domain-specific tools.' });
+  }
+
+  /* Universal tips */
+  tips.push({ icon: '📊', title: 'Quantify Your Impact', body: 'The strongest resumes put numbers in 60–80% of bullet points. Use: "Reduced API response time by 42%", "Led a team of 6 engineers", "Increased conversion rate by 18%".' });
+  tips.push({ icon: '🤖', title: 'ATS Formatting Checklist', body: '(1) Single-column layout only &nbsp;(2) No tables, images, or text boxes &nbsp;(3) Standard section headers &nbsp;(4) Consistent MM/YYYY dates &nbsp;(5) File saved as FirstName_LastName_Resume.pdf' });
+
+  return tips.slice(0, 8);
+}
+
+/* ═══════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════ */
+function saveHistory(data) {
+  try {
+    var hist = JSON.parse(localStorage.getItem('resumeHistory') || '[]');
+    hist.unshift({ id: Date.now(), ts: new Date().toLocaleString(), score: data.score, kwCount: (data.foundKeywords || []).length, data: data });
+    localStorage.setItem('resumeHistory', JSON.stringify(hist.slice(0, 20)));
+  } catch(e) {}
+}
+
+document.getElementById('historyBtn').addEventListener('click', function() {
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('resumeHistory') || '[]'); } catch(e){}
+
+  document.getElementById('historyList').innerHTML = hist.length
+    ? hist.map(function(e) {
+        return '<div class="history-item">' +
+          '<div class="history-item-header">' +
+          '<span class="history-score">Score: ' + e.score + '/100</span>' +
+          '<span class="history-date">' + e.ts + '</span></div>' +
+          '<div style="color:#64748b;font-size:0.78rem;margin-bottom:8px">Keywords matched: ' + e.kwCount + '</div>' +
+          '<button class="btn-tiny" onclick="loadHistory(' + e.id + ')">View Results</button>' +
+          '</div>';
+      }).join('')
+    : '<div class="no-data-message">No saved analyses yet</div>';
+
+  document.getElementById('historyModal').classList.remove('hidden');
+});
+
+window.loadHistory = function(id) {
+  try {
+    var hist  = JSON.parse(localStorage.getItem('resumeHistory') || '[]');
+    var entry = hist.find(function(e){ return e.id === id; });
+    if (entry) {
+      renderResults(entry.data);
+      window._lastResult = entry.data;
+      document.getElementById('historyModal').classList.add('hidden');
+      document.getElementById('resultArea').classList.remove('hidden');
+    }
+  } catch(e){}
+};
+
+document.getElementById('clearHistory').addEventListener('click', function() {
+  if (confirm('Clear all history?')) {
+    localStorage.removeItem('resumeHistory');
+    document.getElementById('historyList').innerHTML = '<div class="no-data-message">History cleared</div>';
+  }
+});
+
+/* ═══════════════════════════════════════════
+   EXPORTS
+═══════════════════════════════════════════ */
+document.getElementById('btnJson').addEventListener('click', function() {
+  if (!window._lastResult) { alert('Run an analysis first.'); return; }
+  var blob = new Blob([JSON.stringify(Object.assign({}, window._lastResult, { exportedAt: new Date().toISOString() }), null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'resume-analysis-' + Date.now() + '.json';
+  a.click();
+});
+
+document.getElementById('btnPdf').addEventListener('click', function() {
+  if (!window._lastResult) { alert('Run an analysis first.'); return; }
+  html2pdf().set({ margin: 8, filename: 'resume-analysis-' + Date.now() + '.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' } })
+    .from(document.getElementById('resultArea')).save();
+});
+
+document.getElementById('btnReset').addEventListener('click', function() {
+  document.getElementById('uploadForm').reset();
+  document.getElementById('resultArea').classList.add('hidden');
+  document.getElementById('liveTipsBox').classList.add('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
+  window._lastResult = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showError(msg) {
+  var box = document.getElementById('errorBox');
+  box.textContent = '⚠ ' + msg;
+  box.classList.remove('hidden');
+}
+function hideError() {
+  document.getElementById('errorBox').classList.add('hidden');
+}
+</script>
+</body>
+</html>

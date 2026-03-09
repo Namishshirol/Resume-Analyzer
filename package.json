@@ -1,0 +1,17 @@
+{
+  "name": "resume-ats-analyzer",
+  "version": "1.0.0",
+  "description": "Resume Analyzer for ATS scoring",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1"
+  }
+}

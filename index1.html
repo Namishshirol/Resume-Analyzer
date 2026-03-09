@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntelliResume</title>
+  <link rel="stylesheet" href="style3.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>📄 IntelliResume</h1>
+          <p>Advanced resume analysis with job matching and AI suggestions</p>
+        </div>
+        <div class="header-controls">
+          <button id="historyBtn" class="icon-btn" title="View Analysis History">📋</button>
+          <button id="darkModeBtn" class="icon-btn" title="Toggle Dark Mode">🌙</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-button active" data-tab="single">Single Analysis</button>
+      <button class="tab-button" data-tab="compare">Compare Resumes</button>
+      <button class="tab-button" data-tab="suggestions">Keywords & Tips</button>
+    </div>
+
+    <!-- Single Resume Analysis Tab -->
+    <div id="single" class="tab-content active">
+      <div class="form-section">
+        <h2>📤 Upload Resume</h2>
+        <form id="uploadForm">
+          <div class="input-group">
+            <label>Resume (PDF)*</label>
+            <input type="file" name="resume" id="resumeFile" accept=".pdf" required />
+          </div>
+
+          <div class="input-group">
+            <label>Job Description (Optional)</label>
+            <textarea id="jobDescription" placeholder="Paste the job posting here for job matching analysis..." rows="4"></textarea>
+            <div id="liveTips" class="live-tips hidden">
+              <div class="tips-header">💡 Quick Tips</div>
+              <div id="liveTipsContent"></div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Custom Keywords (Optional)</label>
+            <input type="text" id="customKeywords" placeholder="e.g., Java, Spring Boot, AWS, Docker (comma-separated)" />
+          </div>
+
+          <div class="input-group">
+            <label>Select Industry (Optional)</label>
+            <select id="industry">
+              <option value="">Default (Tech)</option>
+              <option value="tech">Tech & Software</option>
+              <option value="data">Data Science</option>
+              <option value="devops">DevOps</option>
+              <option value="frontend">Frontend</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary">Analyze Resume</button>
+        </form>
+      </div>
+
+      <div id="result" class="result hidden">
+        <div class="score-box">
+          <div class="score-display">
+            <div class="score-number" id="scoreNumber">0</div>
+            <div class="score-label">/100</div>
+          </div>
+          <div class="score-breakdown">
+            <div class="breakdown-item">
+              <span>Keywords</span>
+              <div class="bar"><div class="bar-fill" id="keywordBar"></div></div>
+              <span id="keywordPercent">0%</span>
+            </div>
+            <div class="breakdown-item">
+              <span>Sections</span>
+              <div class="bar"><div class="bar-fill" id="sectionBar"></div></div>
+              <span id="sectionPercent">0%</span>
+            </div>
+            <div class="breakdown-item">
+              <span>Formatting</span>
+              <div class="bar"><div class="bar-fill" id="formattingBar"></div></div>
+              <span id="formattingPercent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="jobMatchBox" class="info-box hidden">
+          <h3>💼 Job Match Score</h3>
+          <div class="match-score" id="jobMatchScore">0%</div>
+          <p>Relevance to job description</p>
+        </div>
+
+        <div class="info-box">
+          <h3>✅ Found Keywords (<span id="keywordCount">0</span>)</h3>
+          <div id="foundKeywordsList" class="keyword-list"></div>
+        </div>
+
+        <div class="info-box">
+          <h3>❌ Missing Keywords (<span id="missingCount">0</span>)</h3>
+          <div id="missingKeywordsList" class="keyword-list"></div>
+        </div>
+
+        <div class="info-box">
+          <h3>📋 Resume Sections Found</h3>
+          <div id="sectionsList" class="section-list"></div>
+        </div>
+
+        <div class="info-box">
+          <h3>🛠️ Extracted Skills</h3>
+          <div id="skillsList" class="skill-list"></div>
+        </div>
+
+        <div class="info-box">
+          <h3>� Keyword Density</h3>
+          <canvas id="densityChart" style="max-height: 300px; margin-bottom: 20px;"></canvas>
+        </div>
+
+        <div class="info-box">
+          <h3>�💡 Improvement Tips</h3>
+          <div id="tipsList" class="tips-list"></div>
+        </div>
+
+        <div class="info-box">
+          <h3>🤖 AI Suggestions</h3>
+          <div id="aiSuggestions" class="suggestions-text"></div>
+        </div>
+
+        <div class="button-group">
+          <button id="downloadBtn" class="btn-secondary">📥 Download JSON</button>
+          <button id="downloadPdfBtn" class="btn-secondary">📄 Download PDF</button>
+          <button id="resetBtn" class="btn-secondary">🔄 New Analysis</button>
+        </div>
+      </div>
+
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing resume...</p>
+      </div>
+    </div>
+
+    <!-- Compare Resumes Tab -->
+    <div id="compare" class="tab-content">
+      <div class="form-section">
+        <h2>📊 Compare Multiple Resumes</h2>
+        <form id="compareForm">
+          <div class="input-group">
+            <label>Upload Resumes (PDF) - 2 to 5 files*</label>
+            <input type="file" id="compareFileSingle" accept=".pdf" />
+            <button type="button" id="addFileBtn" class="btn-secondary" style="margin-top: 10px;">+ Add Resume</button>
+          </div>
+
+          <div id="compareFilesList" class="file-manager">
+            <h4>📋 Selected Resumes</h4>
+            <ul id="filesListContainer"></ul>
+          </div>
+
+          <div class="input-group">
+            <label>Custom Keywords (Optional)</label>
+            <input type="text" id="compareKeywords" placeholder="e.g., Java, Spring Boot, AWS (comma-separated)" />
+          </div>
+
+          <button type="submit" class="btn-primary">Compare Resumes</button>
+        </form>
+      </div>
+
+      <div id="compareResult" class="result hidden">
+        <h3>📈 Comparison Results</h3>
+        <table id="comparisonTable" class="comparison-table">
+          <thead>
+            <tr>
+              <th>Resume</th>
+              <th>Score</th>
+              <th>Keywords</th>
+              <th>Sections</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonBody"></tbody>
+        </table>
+        <button id="resetCompareBtn" class="btn-secondary">Clear Results</button>
+      </div>
+
+      <div id="compareLoading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Comparing resumes...</p>
+      </div>
+    </div>
+
+    <!-- Keywords & Tips Tab -->
+    <div id="suggestions" class="tab-content">
+      <div class="form-section">
+        <h2>📚 Industry Keywords & Tips</h2>
+        
+        <div class="input-group">
+          <label>Select Industry</label>
+          <select id="suggestionIndustry" onchange="loadIndustryKeywords()">
+            <option value="tech">Tech & Software</option>
+            <option value="data">Data Science</option>
+            <option value="devops">DevOps</option>
+            <option value="frontend">Frontend Development</option>
+            <option value="marketing">Marketing</option>
+            <option value="product">Product Management</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Keywords Section -->
+      <div class="info-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3>🎯 Recommended Keywords for this Industry</h3>
+          <div style="display: flex; gap: 10px;">
+            <button id="copyKeywordsBtn" class="btn-tiny">📋 Copy All</button>
+            <button id="exportKeywordsBtn" class="btn-tiny">⬇️ Export</button>
+          </div>
+        </div>
+        <div id="industryKeywordsList" class="keyword-list"></div>
+        <div id="keywordStats" class="keyword-stats" style="margin-top: 15px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 0.9rem;"></div>
+      </div>
+
+      <!-- Industry-Specific Tips Section -->
+      <div class="info-box">
+        <h3>⭐ Industry-Specific Tips</h3>
+        <div id="industryTips" class="tips-grid"></div>
+      </div>
+
+      <!-- Quick Checklist -->
+      <div class="info-box">
+        <h3>✅ Pre-Submission Checklist</h3>
+        <div id="checklistItems" class="checklist-container"></div>
+      </div>
+
+      <!-- Common Mistakes -->
+      <div class="info-box">
+        <h3>⚠️ Common Mistakes to Avoid</h3>
+        <div id="mistakesContainer" class="mistakes-grid"></div>
+      </div>
+
+      <!-- General ATS Tips (improved styling) -->
+      <div class="info-box">
+        <h3>💼 General ATS Tips</h3>
+        <div class="tips-tabs">
+          <button class="tips-tab-btn active" onclick="switchTipsTab('structure')">Structure</button>
+          <button class="tips-tab-btn" onclick="switchTipsTab('content')">Content</button>
+          <button class="tips-tab-btn" onclick="switchTipsTab('formatting')">Formatting</button>
+          <button class="tips-tab-btn" onclick="switchTipsTab('optimization')">Optimization</button>
+        </div>
+        <ul id="structure" class="tips-category active">
+          <li><strong>Clear Sections:</strong> Use standard headings: Summary, Experience, Education, Skills, Projects, Certifications</li>
+          <li><strong>Logical Flow:</strong> Arrange sections from most relevant to least relevant for the role</li>
+          <li><strong>Consistent Structure:</strong> Keep all job entries in the same format for easy ATS parsing</li>
+        </ul>
+        <ul id="content" class="tips-category hidden">
+          <li><strong>Keywords First:</strong> Include 8-12 relevant keywords from job description in your resume</li>
+          <li><strong>Action Verbs:</strong> Start bullets with power words: Led, Managed, Developed, Designed, Increased</li>
+          <li><strong>Quantifiable Results:</strong> Show impact with numbers: "30% improvement", "managed 5-person team", "$50k cost reduction"</li>
+          <li><strong>Tailor Content:</strong> Customize for each job by mirroring job description language</li>
+        </ul>
+        <ul id="formatting" class="tips-category hidden">
+          <li><strong>Standard Fonts:</strong> Use Arial, Calibri, or Times New Roman (11-12pt)</li>
+          <li><strong>ATS-Friendly:</strong> No images, tables, colored text, special characters, or footer/header</li>
+          <li><strong>Simple Layout:</strong> Avoid columns, text boxes, graphics, and complex formatting</li>
+          <li><strong>Bullet Points:</strong> Use simple bullets (-) instead of fancy symbols</li>
+        </ul>
+        <ul id="optimization" class="tips-category hidden">
+          <li><strong>File Format:</strong> Submit as PDF or plain text, not Word documents (unless required)</li>
+          <li><strong>Length Target:</strong> Keep to 1-2 pages max (prioritize last 10 years of experience)</li>
+          <li><strong>Margins:</strong> Use 0.5-0.75" margins to fit more content efficiently</li>
+          <li><strong>Test Your Resume:</strong> Copy/paste into text editor to verify formatting compatibility</li>
+          <li><strong>Keyword Mirror:</strong> Use exact terminology from job posting (e.g., "Machine Learning" not just "AI")</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div id="historyModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 Analysis History</h2>
+        <button id="closeHistoryBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" class="history-list"></div>
+        <div id="noHistory" class="no-data-message">No saved analyses yet</div>
+      </div>
+      <div class="modal-footer">
+        <button id="clearHistoryBtn" class="btn-secondary">Clear History</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        
+        e.target.classList.add('active');
+        const tabId = e.target.dataset.tab;
+        document.getElementById(tabId).classList.remove('hidden');
+        
+        if (tabId === 'suggestions') {
+          loadIndustryKeywords();
+        }
+      });
+    });
+
+    // Load industry keywords with enhanced features
+    let allIndustryKeywords = [];
+    
+    async function loadIndustryKeywords() {
+      const industry = document.getElementById('suggestionIndustry').value;
+      try {
+        const res = await fetch(`/keywords/${industry}`);
+        const data = await res.json();
+        allIndustryKeywords = data.keywords;
+        
+        // Display keywords
+        displayKeywords(allIndustryKeywords);
+        
+        // Update statistics
+        updateKeywordStats(allIndustryKeywords);
+        
+        // Load industry-specific tips, checklist, and mistakes
+        loadIndustryContent(industry);
+      } catch (err) {
+        console.error('Error loading keywords:', err);
+      }
+    }
+
+    function displayKeywords(keywords) {
+      const list = document.getElementById('industryKeywordsList');
+      list.innerHTML = keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('');
+    }
+
+    function updateKeywordStats(keywords) {
+      const statsDiv = document.getElementById('keywordStats');
+      const total = keywords.length;
+      const categories = Math.ceil(total / 15);
+      statsDiv.innerHTML = `
+        <div>📊 <strong>Total Keywords:</strong> <span>${total}</span></div>
+        <div>🏷️ <strong>Skill Categories:</strong> <span>${categories}</span></div>
+        <div>✨ <strong>Recommended:</strong> <span>Use 8-12 of these in your resume</span></div>
+      `;
+    }
+
+    // Copy all keywords to clipboard
+    document.getElementById('copyKeywordsBtn').addEventListener('click', () => {
+      const keywords = allIndustryKeywords.join(', ');
+      navigator.clipboard.writeText(keywords).then(() => {
+        alert('All keywords copied to clipboard!');
+      }).catch(err => console.error('Copy failed:', err));
+    });
+
+    // Export keywords as text file
+    document.getElementById('exportKeywordsBtn').addEventListener('click', () => {
+      const keywords = allIndustryKeywords.join('\n');
+      const blob = new Blob([keywords], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'industry-keywords.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Load industry-specific content
+    function loadIndustryContent(industry) {
+      const industryContent = {
+        tech: {
+          tips: [
+            { emoji: '💻', title: 'Language Proficiency', desc: 'Highlight: Python, JavaScript, Java, C++, TypeScript with specific versions and libraries', details: 'Don\'t just list languages - show proficiency level. Include: version numbers (Python 3.9+), frameworks (Django, Flask), libraries (NumPy, Pandas for Python | Express, Next.js for JavaScript). Mention years of experience with each language. Show relevant projects that demonstrate mastery. Include any certifications related to programming languages.' },
+            { emoji: '🏗️', title: 'Architecture Knowledge', desc: 'Showcase: microservices, REST APIs, system design patterns, and scalability experience', details: 'Employers want to see you can design scalable systems. Include: architecture patterns used (MVC, MVP, MVVM), API design experience (RESTful, GraphQL), understanding of microservices vs monolithic, experience with databases (SQL vs NoSQL), caching strategies, message queues, and load balancing. Show examples of systems you\'ve architected and their scale (users served, requests/second, data volume).' },
+            { emoji: '🧪', title: 'Testing & QA', desc: 'Include: unit testing, integration testing, CI/CD pipelines, automation experience', details: 'Quality assurance is crucial. Detail: testing frameworks used (Jest, Pytest, JUnit), test coverage percentage achieved, types of tests written (unit, integration, e2e), CI/CD tools experience (GitHub Actions, Jenkins, GitLab CI), automated deployment processes, how you ensure code quality before production. Mention any bug reduction or quality improvements you\'ve achieved.' },
+            { emoji: '☁️', title: 'Cloud Platforms', desc: 'Detail: AWS (EC2, S3, Lambda), Google Cloud, Azure services you\'ve worked with', details: 'Cloud expertise is highly valued. Specify: which AWS services (EC2, S3, RDS, Lambda, DynamoDB, SNS/SQS, CloudFront), Azure services (VMs, App Service, SQL Database, Cosmos DB), or GCP services (Compute Engine, Cloud Storage, Datastore). Include: how you optimized costs, set up auto-scaling, managed security/IAM, used CDNs, and deployed applications to production cloud environments.' }
+          ],
+          checklist: [
+            'Resume includes 2-3 concrete coding projects with GitHub links',
+            'Technical skills section organized by category (Languages, Frameworks, Tools)',
+            'Work experience shows impact: performance improvements, bug fixes, features shipped',
+            'Resume mentions testing, debugging, and version control (Git) experience',
+            'Contact info includes GitHub/Portfolio/LinkedIn profiles'
+          ],
+          mistakes: [
+            { title: '❌ Vague Tech Stack', desc: 'Don\'t say "experienced with technologies". List specific: Python 3.9, React 18, PostgreSQL 14' },
+            { title: '❌ No Project Details', desc: 'Always include: what you built, tech used, your specific contribution, and results/metrics' },
+            { title: '❌ Ignoring Soft Skills', desc: 'Balance technical skills with communication and collaboration examples' },
+            { title: '❌ Outdated Technologies', desc: 'Focus on recent tools. Legacy tech is fine if still relevant to job; explain context' }
+          ]
+        },
+        data: {
+          tips: [
+            { emoji: '📊', title: 'Data Tools', desc: 'Highlight: Python (Pandas, NumPy), R, SQL optimization, data visualization libraries', details: 'Demonstrate hands-on experience with data tools. Include: Python libraries (Pandas for data manipulation, NumPy for numerical computing, Matplotlib/Seaborn for visualization), SQL expertise (complex queries, indexing, optimization), R packages (ggplot2, dplyr), visualization tools (Tableau, Power BI, Plotly, D3.js). Mention data processing at scale: billion-row datasets, distributed computing (Spark, Hadoop). Show performance improvements achieved through optimization.' },
+            { emoji: '🤖', title: 'ML/AI Experience', desc: 'Detail: model types used, frameworks (TensorFlow, scikit-learn), accuracy metrics achieved', details: 'Showcase specific machine learning models you\'ve built: regression, classification, clustering, NLP, computer vision, recommender systems. Include: frameworks used (TensorFlow, PyTorch, scikit-learn, XGBoost), performance metrics (accuracy, precision, recall, F1-score, AUC-ROC), how you handled class imbalance/overfitting, hyperparameter tuning methods, cross-validation strategies. Mention models deployed to production and their business impact: accuracy improvement %, prediction latency, inference optimization.' },
+            { emoji: '📈', title: 'Analytics Expertise', desc: 'Show: A/B testing, statistical analysis, storytelling with data, business impact', details: 'Analytics roles need business acumen. Demonstrate: A/B testing methodology and results-driven insights, statistical hypothesis testing (t-tests, chi-square tests, confidence intervals), understanding of p-values and statistical significance, experience with data storytelling (turning numbers into actionable insights), dashboards created and their impact. Show examples: "A/B test revealed 15% improvement in conversion, saving company $2M annually". Mention tools: Tableau, Looker, custom dashboards.' },
+            { emoji: '🏢', title: 'Domain Knowledge', desc: 'Emphasize: industry-specific metrics, datasets handled (size/complexity), real-world problems solved', details: 'Show you understand the business context. Include: industry you\'ve worked in (finance, healthcare, e-commerce, etc.), domain-specific metrics you\'ve optimized (churn rate, customer lifetime value, fraud detection, risk assessment), datasets you\'ve handled and their characteristics (size, features, quality issues), real business problems you\'ve solved with data. Example: "Reduced customer churn from 8% to 5% by identifying at-risk cohorts, retaining $5M in annual revenue".' }
+          ],
+          checklist: [
+            'Include specific datasets worked with and their size (millions of rows, etc.)',
+            'Mention statistical concepts used: hypothesis testing, confidence intervals, p-values',
+            'Show business impact: revenue increase, cost reduction, improved accuracy %',
+            'Portfolio includes Jupyter notebooks, Kaggle competitions, or research papers',
+            'List tools for data visualization: Tableau, Power BI, Plotly, or custom dashboards'
+          ],
+          mistakes: [
+            { title: '❌ Generic Model Names', desc: 'Don\'t just say "machine learning". Specify: Random Forest, Neural Networks, Gradient Boosting' },
+            { title: '❌ Missing Metrics', desc: 'Always quantify: accuracy %, F1 score, ROI, time saved, insights uncovered' },
+            { title: '❌ No Business Context', desc: 'Technical skills alone won\'t impress. Show: how analysis drove decisions or improved business' },
+            { title: '❌ Overlooking Data Cleansing', desc: 'Include experience with: data validation, handling missing values, outlier detection' }
+          ]
+        },
+        devops: {
+          tips: [
+            { emoji: '🐳', title: 'Containerization', desc: 'Emphasize: Docker, Kubernetes, orchestration, container registry management', details: 'Container expertise is essential for modern DevOps. Include: Docker experience (writing Dockerfiles, optimizing images, multi-stage builds), Kubernetes knowledge (deploying applications, scaling pods, managing resources, services/ingress), container registries (Docker Hub, ECR, GCR), orchestration at scale, health checks and rolling updates. Mention: uptime achieved, deployment frequency increased, container security practices implemented.' },
+            { emoji: '🔄', title: 'CI/CD Pipelines', desc: 'Detail: Jenkins, GitLab CI, GitHub Actions, deployment automation, testing automation', details: 'CI/CD is crucial for DevOps culture. Show: pipeline architecture designed, tools used (Jenkins, GitLab CI, GitHub Actions, CircleCI), stages implemented (build, test, deploy), testing automation frameworks, artifact management, security scanning in pipelines, deployment frequency and success rate improvements. Mention: reduced manual deployments, faster release cycles, decreased deployment time from hours to minutes.' },
+            { emoji: '🛡️', title: 'Security & Compliance', desc: 'Show: secrets management, security scanning, compliance frameworks (PCI, HIPAA, etc.)', details: 'Security-first approach is critical. Include: secrets management solutions (HashiCorp Vault, AWS Secrets Manager), vulnerability scanning tools, container security scanning, network security (firewalls, VPCs, security groups), IAM/access control implementation, compliance experience (PCI-DSS, HIPAA, GDPR, SOC2), security audits performed, incident response procedures. Mention: zero security breaches, reduced vulnerabilities identified and patched.' },
+            { emoji: '📡', title: 'Infrastructure as Code', desc: 'Highlight: Terraform, Ansible, CloudFormation, infrastructure versioning', details: 'IaC enables reliable infrastructure management. Detail: tools used (Terraform, Ansible, CloudFormation, Pulumi), infrastructure versioned in Git, testing IaC (Terratest), environment consistency achieved, disaster recovery automation, cost optimization through IaC, compliance as code. Show: infrastructure deployment time reduced, consistent environments across dev/staging/prod, infrastructure changes auditable and reversible.' }
+          ],
+          checklist: [
+            'Resume includes infrastructure platforms managed: AWS, Azure, GCP, on-premise',
+            'Shows concrete experience with: deployment frequency, downtime reduction, incident response',
+            'Mentions monitoring & logging tools: Prometheus, Grafana, ELK stack, Splunk',
+            'Demonstrates understanding of scalability: load balancing, auto-scaling, capacity planning',
+            'Includes disaster recovery, backup & recovery procedures, and failover experience'
+          ],
+          mistakes: [
+            { title: '❌ Ops Without Dev', desc: 'Remember DevOps bridges both. Show development experience: scripting, coding, automation' },
+            { title: '❌ Tool Lists Only', desc: 'Don\'t just list tools. Explain: specific problems solved, improvements achieved, % downtime reduction' },
+            { title: '❌ Ignoring Monitoring', desc: 'If you managed infrastructure, you managed alerts. Include monitoring, observability, alerting experience' },
+            { title: '❌ Security Afterthought', desc: 'Security is crucial. Mention: CVE scanning, vulnerability assessment, secure coding practices' }
+          ]
+        },
+        frontend: {
+          tips: [
+            { emoji: '⚛️', title: 'Frameworks & Libraries', desc: 'Specify: React, Vue, Angular versions; state management (Redux, MobX); component libraries', details: 'Framework expertise is essential. Include: specific frameworks and versions (React 18, Vue 3, Angular 15), experience with hooks/composition API, state management solutions (Redux, Vuex, NgRx, Context API, Zustand), component libraries used (Material-UI, Chakra UI, Ant Design), package managers (npm, yarn, pnpm). Mention: complex state management implemented, performance optimizations, component reusability achieved across projects.' },
+            { emoji: '🎨', title: 'UI/UX Focus', desc: 'Highlight: responsive design, accessibility (WCAG), performance optimization, user testing', details: 'User experience matters tremendously. Show: responsive design implementation (mobile-first approach), accessibility compliance (WCAG 2.1 AA standard), color contrast, keyboard navigation, screen reader compatibility, performance optimization (Core Web Vitals: LCP, FID, CLS), lazy loading, image optimization, user testing conducted, design system implementation. Mention: improved accessibility score, Lighthouse scores achieved, user satisfaction metrics improved.' },
+            { emoji: '⚡', title: 'Performance Skills', desc: 'Show: bundle optimization, lazy loading, caching strategies, Core Web Vitals optimization', details: 'Performance is critical for user experience and SEO. Detail: code splitting implemented, tree shaking optimization, bundle size reduction achieved (% reduction), lazy loading for routes and components, caching strategies (browser cache, service workers), CDN usage, image optimization (WebP, srcset), critical rendering path optimization. Include: page load time improvements, Core Web Vitals scores, performance monitoring tools used (Lighthouse, WebPageTest, Sentry).' },
+            { emoji: '🧲', title: 'Testing & Quality', desc: 'Include: unit tests, integration tests, E2E testing (Cypress, Playwright), browser compatibility', details: 'Quality assurance is non-negotiable. Show: testing frameworks (Jest, Vitest, Mocha), unit test coverage (%), integration tests, end-to-end tests (Cypress, Playwright, TestCafe), snapshot testing, mock and stub experience, testing libraries (React Testing Library, Enzyme), browser compatibility testing, continuous testing in CI pipelines. Mention: test coverage achieved, bugs caught before production, faster debugging through tests.' }
+          ],
+          checklist: [
+            'Portfolio demonstrates responsive, mobile-first designs across devices',
+            'Work examples show: accessibility standards met, performance metrics improved',
+            'Resume mentions specific CSS frameworks/preprocessors: Tailwind, Sass, styled-components',
+            'Shows experience with: API integration, error handling, state management best practices',
+            'Includes optimization techniques: code splitting, tree shaking, image optimization'
+          ],
+          mistakes: [
+            { title: '❌ Design Without Development', desc: 'Tools like Figma are nice, but emphasize HTML/CSS/JS implementation skills' },
+            { title: '❌ Ignoring Performance', desc: 'Page speed matters. Include metrics: Lighthouse score, load time improvements, Core Web Vitals' },
+            { title: '❌ Single Framework', desc: 'Seem overspecialized. Show adaptability: "Experienced with React, can quickly learn Vue/Angular"' },
+            { title: '❌ No Testing Experience', desc: 'Quality matters. Mention: unit testing, integration testing automation, code coverage' }
+          ]
+        },
+        marketing: {
+          tips: [
+            { emoji: '📱', title: 'Channel Expertise', desc: 'Detail: email, social media, SEO/SEM, content marketing, marketing automation platforms', details: 'Multi-channel expertise is valuable. Include: email marketing campaigns (open rates, click-through rates achieved), social media management (follower growth %, engagement rates), SEO optimization (keyword rankings, organic traffic growth), SEM/PPC (cost-per-click, conversion rates, ROAS), content marketing strategy, influencer partnerships, affiliate marketing. Mention platforms used: HubSpot, Mailchimp, Google Ads, Facebook Ads Manager, Hootsuite, Buffer. Show: integrated campaigns achieving multiple channel success.' },
+            { emoji: '📊', title: 'Analytics & Data', desc: 'Show: Google Analytics, A/B testing, conversion rate optimization, ROI calculations, dashboards', details: 'Data-driven marketing is essential. Demonstrate: Google Analytics expertise (tracking setup, conversion funnels, audience segmentation), A/B testing methodologies and results, conversion rate optimization (CRO) implementations, attribution modeling, customer journey mapping, dashboard creation, marketing automation metrics (lead scoring, nurture workflows). Include impact: "A/B test improved conversion rate from 2% to 3.5% (+75% increase, generating $500k additional revenue)".' },
+            { emoji: '🎯', title: 'Campaign Management', desc: 'Highlight: campaign strategy, audience segmentation, budget management, lead generation', details: 'Campaign expertise drives results. Show: campaign planning and strategy, audience segmentation and targeting, budget allocation and ROI optimization, lead generation tactics (landing pages, lead magnets, webinars), sales funnel management, customer retention strategies. Mention: campaigns managed end-to-end, budget size managed, lead generation volume, lead quality improvements, customer acquisition cost (CAC) reduction, lifetime value (LTV) optimization.' },
+            { emoji: '🤝', title: 'Team Collaboration', desc: 'Emphasize: working with sales/product, cross-functional projects, stakeholder communication', details: 'Collaboration is key in marketing. Include: cross-functional project experience (marketing, sales, product, finance), stakeholder communication (presentations, reporting), aligning marketing with sales (SLA definition), product launch coordination, vendor management, team leadership/mentorship if applicable. Show: improved marketing-sales alignment, successful product launches led, stakeholder buy-in achieved, team productivity improvements.' }
+          ],
+          checklist: [
+            'Include quantifiable results: % increase in leads, conversion rate improvements, ROI achieved',
+            'Resume shows experience with marketing tools: HubSpot, Mailchimp, Google Ads, LinkedIn Ads',
+            'Demonstrates understanding of: customer journey, buyer personas, market segmentation',
+            'Shows content creation examples: blog posts, case studies, social media content, video scripts',
+            'Includes analytics: tracking metrics, dashboards created, insights discovered, decisions driven'
+          ],
+          mistakes: [
+            { title: '❌ Activities vs Results', desc: 'Don\'t say "managed social media". Say: "Grew Instagram followers from 10k to 50k (+400%)"' },
+            { title: '❌ Missing Metrics', desc: 'Everything in marketing is measurable. Include: cost per acquisition, customer lifetime value, ROI' },
+            { title: '❌ No Multi-Channel Experience', desc: 'Show versatility: email campaigns, paid ads, organic, content - not just one channel' },
+            { title: '❌ Ignoring Data', desc: 'Marketing is increasingly data-driven. Show analytics skills, A/B testing, experimental mindset' }
+          ]
+        },
+        product: {
+          tips: [
+            { emoji: '🎯', title: 'Product Strategy', desc: 'Highlight: roadmapping, prioritization frameworks, go-to-market strategy, product-market fit work', details: 'Strategic thinking is core to product management. Include: product roadmap development, prioritization frameworks used (RICE, MoSCoW, Kano), go-to-market strategy execution, competitive analysis, market research conducted, product-market fit validation, vision/mission definition, goal-setting (OKRs), long-term product strategy. Mention: products scaled from launch to X users/revenue, market share gained, successful pivots made based on data.' },
+            { emoji: '📊', title: 'Metrics & Analytics', desc: 'Show: OKR/KPI definition, user behavior analysis, retention/acquisition metrics, dashboards', details: 'Data drives product decisions. Detail: OKR/KPI framework implementation, north star metric definition, metrics dashboard creation, user analytics (DAU, MAU, churn, retention cohorts), acquisition funnel metrics, engagement metrics, revenue metrics (ARPU, LTV, CAC), A/B testing for product decisions, data visualization tools used. Include: "Identified key metric gap, implemented tracking, discovered root cause increasing churn from 3% to 5%, executed feature reducing churn to 2%".' },
+            { emoji: '👥', title: 'User Research', desc: 'Detail: user interviews, usability testing, persona development, customer feedback loops', details: 'Understanding users is fundamental. Show: number of user interviews conducted, usability testing (moderated/unmoderated), card sorting exercises, survey design and analysis, persona development, user journey mapping, empathy mapping, feedback collection methods (in-app, email, support tickets, user forums), insights translated to product decisions. Mention: feature adoption rates, user satisfaction scores (NPS), support ticket reduction from improved UX.' },
+            { emoji: '⚙️', title: 'Cross-Functional Leadership', desc: 'Emphasize: working with engineering, design, marketing; influencing without authority', details: 'PM is the glue connecting teams. Include: cross-functional team management (engineering, design, marketing, sales), stakeholder management (executives, investors, board), presenting to leadership, handling disagreements and trade-offs, technical requirements communication, design collaboration methods, timeline and scope management. Show: products shipped on time, team velocity improved, cross-functional conflicts resolved, buy-in from diverse stakeholders achieved.' }
+          ],
+          checklist: [
+            'Resume includes specific products shipped with user adoption metrics and impact',
+            'Shows understanding of: Agile/Scrum, user stories, sprint planning, backlog prioritization',
+            'Demonstrates data literacy: interpreting metrics, using analytics tools, making data-driven decisions',
+            'Highlights stakeholder management: presenting to executives, handling technical debt trade-offs',
+            'Includes examples of: feature launches, user retention improvements, revenue impact'
+          ],
+          mistakes: [
+            { title: '❌ Technical Jargon Overload', desc: 'PMs aren\'t engineers. Balance: show you understand tech but focus on business impact' },
+            { title: '❌ No Metrics or Impact', desc: 'Don\'t say "improved product". Quantify: DAU increase, feature adoption %, revenue impact, NPS improvement' },
+            { title: '❌ Solo Player Mentality', desc: 'PM is cross-functional. Show: collaboration, communication, how you unblock teams' },
+            { title: '❌ Missing User Voice', desc: 'Don\'t ignore customers. Show: user interviews, customer feedback integration, support tickets reviewed' }
+          ]
+        }
+      };
+
+      const content = industryContent[industry] || industryContent.tech;
+
+      // Load industry-specific tips
+      const tipsGrid = document.getElementById('industryTips');
+      tipsGrid.innerHTML = content.tips.map((tip, idx) => `
+        <div class="tip-card" onclick="showTipDetail('${industry}', ${idx})" style="cursor: pointer;">
+          <h4>${tip.emoji} ${tip.title}</h4>
+          <p>${tip.desc}</p>
+          <div class="tip-click-indicator">👉 Click for details →</div>
+        </div>
+      `).join('');
+
+      // Load checklist
+      const checklistContainer = document.getElementById('checklistItems');
+      checklistContainer.innerHTML = content.checklist.map((item, idx) => `
+        <div class="checklist-item-wrapper" onclick="showChecklistDetail('${industry}', ${idx})" style="cursor: pointer;">
+          <label class="checklist-item">
+            <input type="checkbox" onclick="event.stopPropagation()">
+            <div class="checklist-checkbox">✓</div>
+            <div class="checklist-text">${item}</div>
+            <span class="checklist-expand-icon">→</span>
+          </label>
+        </div>
+      `).join('');
+
+      // Load common mistakes
+      const mistakesContainer = document.getElementById('mistakesContainer');
+      mistakesContainer.innerHTML = content.mistakes.map((mistake, idx) => `
+        <div class="mistake-card" onclick="showMistakeDetail('${industry}', ${idx})" style="cursor: pointer;">
+          <div class="mistake-title">${mistake.title}</div>
+          <div class="mistake-description">${mistake.desc}</div>
+          <div class="mistake-expand-indicator">👉 Click for details →</div>
+        </div>
+      `).join('');
+
+      // Store industry content for detail view
+      window.industryContentData = industryContent;
+    }
+
+    // Show detailed tip information in modal
+    window.showTipDetail = function(industry, tipIndex) {
+      const content = window.industryContentData[industry];
+      if (!content || !content.tips[tipIndex]) return;
+
+      const tip = content.tips[tipIndex];
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'tip-detail-modal';
+      modal.innerHTML = `
+        <div class="tip-detail-content">
+          <div class="tip-detail-header">
+            <h3>${tip.emoji} ${tip.title}</h3>
+            <button class="tip-detail-close" onclick="this.closest('.tip-detail-modal').remove();">✕</button>
+          </div>
+          <div class="tip-detail-body">
+            <div class="tip-detail-summary"><strong>Summary:</strong> ${tip.desc}</div>
+            <div class="tip-detail-full"><strong>Detailed Guide:</strong><br>${tip.details}</div>
+            <div class="tip-action-hints">
+              <strong>💡 Quick Tips:</strong>
+              <ul>
+                <li>Use these points when tailoring your resume for this role</li>
+                <li>Highlight relevant experience that matches these keywords</li>
+                <li>Include metrics and numbers to demonstrate impact</li>
+                <li>Customize your resume for each job application</li>
+              </ul>
+            </div>
+          </div>
+          <div class="tip-detail-footer">
+            <div class="tip-footer-right">
+              <button class="btn-secondary" onclick="this.closest('.tip-detail-modal').remove();">Close</button>
+              <button class="btn-secondary" onclick="copyToClipboard('${tip.title}\n\n${tip.desc}\n\n${tip.details}')">📋 Copy All</button>
+              <button class="btn-secondary" onclick="exportTipAsFile('${tip.title}', '${tip.desc}', '${tip.details}')">⬇️ Export</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Close on background click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+    };
+
+    // Show checklist item details
+    window.showChecklistDetail = function(industry, itemIndex) {
+      const content = window.industryContentData[industry];
+      if (!content || !content.checklist[itemIndex]) return;
+
+      const item = content.checklist[itemIndex];
+
+      const modal = document.createElement('div');
+      modal.className = 'tip-detail-modal';
+      modal.innerHTML = `
+        <div class="tip-detail-content">
+          <div class="tip-detail-header">
+            <h3>✅ Pre-Submission Checklist</h3>
+            <button class="tip-detail-close" onclick="this.closest('.tip-detail-modal').remove();">✕</button>
+          </div>
+          <div class="tip-detail-body">
+            <div class="tip-detail-summary"><strong>Item:</strong> ${item}</div>
+            <div class="tip-detail-full">
+              <strong>Why This Matters:</strong><br>
+              This checklist item is crucial for ensuring your resume passes ATS scanning and presents your qualifications effectively to recruiters. By verifying this before submission, you increase your chances of being selected for an interview.
+              <br><br>
+              <strong>How to Complete:</strong><br>
+              • Review your resume against this requirement<br>
+              • Make any necessary adjustments or additions<br>
+              • Save and test your resume in ATS scanner<br>
+              • Verify the changes appear correctly when copy-pasted to text editor
+            </div>
+          </div>
+          <div class="tip-detail-footer">
+            <div class="tip-footer-right">
+              <button class="btn-secondary" onclick="this.closest('.tip-detail-modal').remove();">Close</button>
+              <button class="btn-secondary" onclick="copyToClipboard('Checklist: ${item}')">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+    };
+
+    // Show common mistake details
+    window.showMistakeDetail = function(industry, mistakeIndex) {
+      const content = window.industryContentData[industry];
+      if (!content || !content.mistakes[mistakeIndex]) return;
+
+      const mistake = content.mistakes[mistakeIndex];
+
+      const modal = document.createElement('div');
+      modal.className = 'tip-detail-modal';
+      modal.innerHTML = `
+        <div class="tip-detail-content">
+          <div class="tip-detail-header">
+            <h3>${mistake.title}</h3>
+            <button class="tip-detail-close" onclick="this.closest('.tip-detail-modal').remove();">✕</button>
+          </div>
+          <div class="tip-detail-body">
+            <div class="tip-detail-summary"><strong>The Issue:</strong> ${mistake.desc}</div>
+            <div class="tip-detail-full">
+              <strong>Why This Is a Mistake:</strong><br>
+              ATS systems and recruiters need specific, measurable information to properly evaluate your qualifications. Vague or incomplete information can cause your resume to be filtered out before a human even sees it.
+              <br><br>
+              <strong>How to Fix It:</strong><br>
+              • Replace generic terms with specific, measurable details<br>
+              • Include concrete examples from your experience<br>
+              • Quantify your achievements with numbers and percentages<br>
+              • Use terminology from the job description<br>
+              • Test your changes in an ATS simulator
+            </div>
+          </div>
+          <div class="tip-detail-footer">
+            <div class="tip-footer-right">
+              <button class="btn-secondary" onclick="this.closest('.tip-detail-modal').remove();">Close</button>
+              <button class="btn-secondary" onclick="copyToClipboard('${mistake.title}\n${mistake.desc}')">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+    };
+    // Export tip as text file
+    window.exportTipAsFile = function(title, summary, details) {
+      const content = `${title}\n${'='.repeat(50)}\n\nSummary:\n${summary}\n\nDetailed Guide:\n${details}\n\n${'='.repeat(50)}\nExported from Resume ATS Analyzer`;
+      
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `resume-tip-${title.replace(/\s+/g, '-').toLowerCase()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Copy to clipboard helper
+    window.copyToClipboard = function(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      }).catch(err => console.error('Copy failed:', err));
+    };
+
+    // Tab switching for ATS tips
+    window.switchTipsTab = function(tabName) {
+      // Hidden all tabs
+      document.querySelectorAll('.tips-category').forEach(tab => {
+        tab.classList.remove('active');
+        tab.classList.add('hidden');
+      });
+
+      // Remove active from all buttons
+      document.querySelectorAll('.tips-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected tab
+      const tab = document.getElementById(tabName);
+      if (tab) {
+        tab.classList.remove('hidden');
+        tab.classList.add('active');
+      }
+
+      // Mark button as active
+      event.target.classList.add('active');
+    };
+
+    // Single Resume Analysis
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('resumeFile');
+      const jobDesc = document.getElementById('jobDescription').value;
+      const customKeywords = document.getElementById('customKeywords').value;
+      const file = fileInput.files[0];
+      
+      if (!file) return alert('Upload a PDF first!');
+
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('jobDescription', jobDesc);
+      formData.append('customKeywords', customKeywords);
+
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('result').classList.add('hidden');
+
+      try {
+        const res = await fetch('/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert('Error: ' + data.error);
+          document.getElementById('loading').classList.add('hidden');
+          return;
+        }
+
+        displayResults(data);
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+
+        // Store result for download
+        window.lastResult = data;
+      } catch (err) {
+        alert('Error analyzing resume: ' + err.message);
+        document.getElementById('loading').classList.add('hidden');
+      }
+    });
+
+    // Display Analysis Results
+    function displayResults(data) {
+      // Score display
+      document.getElementById('scoreNumber').textContent = data.score;
+
+      // Breakdown percentages
+      const keywordPercent = Math.round((data.breakdown.keywordScore / 50) * 100);
+      const sectionPercent = Math.round((data.breakdown.sectionScore / 25) * 100);
+      const formattingPercent = Math.round((data.breakdown.formattingScore / 15) * 100);
+
+      document.getElementById('keywordPercent').textContent = keywordPercent + '%';
+      document.getElementById('sectionPercent').textContent = sectionPercent + '%';
+      document.getElementById('formattingPercent').textContent = formattingPercent + '%';
+
+      document.getElementById('keywordBar').style.width = keywordPercent + '%';
+      document.getElementById('sectionBar').style.width = sectionPercent + '%';
+      document.getElementById('formattingBar').style.width = formattingPercent + '%';
+
+      // Job match score
+      if (data.jobMatchScore !== null) {
+        document.getElementById('jobMatchBox').classList.remove('hidden');
+        document.getElementById('jobMatchScore').textContent = data.jobMatchScore + '%';
+      }
+
+      // Keywords
+      document.getElementById('keywordCount').textContent = data.foundKeywords.length;
+      document.getElementById('keywordPercent').textContent = 
+        Math.round((data.foundKeywords.length / 10) * 100) + '%';
+      document.getElementById('foundKeywordsList').innerHTML = 
+        data.foundKeywords.map(k => `<span class="keyword-tag found">${k}</span>`).join('');
+
+      // Missing keywords
+      document.getElementById('missingCount').textContent = data.skillGap.missing.length;
+      document.getElementById('missingKeywordsList').innerHTML = 
+        data.skillGap.missing.slice(0, 10).map(k => `<span class="keyword-tag missing">${k}</span>`).join('');
+
+      // Sections
+      document.getElementById('sectionsList').innerHTML = 
+        data.foundSections.map(s => `<span class="section-badge">${s}</span>`).join('');
+
+      // Skills
+      document.getElementById('skillsList').innerHTML = 
+        data.extractedSkills.slice(0, 15).map(s => `<span class="skill-tag">${s}</span>`).join('');
+
+      // Tips
+      document.getElementById('tipsList').innerHTML = 
+        data.improvementTips.map(tip => `<div class="tip-block"><p>${tip}</p></div>`).join('');
+
+      // AI Suggestions
+      document.getElementById('aiSuggestions').textContent = data.aiSuggestions;
+    }
+
+    // Download Report
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!window.lastResult) return alert('No result to download');
+
+      const report = {
+        ...window.lastResult,
+        timestamp: new Date().toISOString()
+      };
+
+      const dataStr = JSON.stringify(report, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `resume-report-${Date.now()}.json`;
+      link.click();
+    });
+
+    // Reset Analysis
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('uploadForm').reset();
+      document.getElementById('result').classList.add('hidden');
+      window.lastResult = null;
+    });
+
+    // Compare Resumes
+    let selectedFiles = [];
+
+    document.getElementById('addFileBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('compareFileSingle');
+      
+      if (fileInput.files.length === 0) {
+        alert('Please select a file');
+        return;
+      }
+
+      if (selectedFiles.length >= 5) {
+        alert('Maximum 5 files allowed');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      
+      // Check if file already added
+      const isDuplicate = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+      if (isDuplicate) {
+        alert('This file is already added');
+        fileInput.value = '';
+        return;
+      }
+
+      selectedFiles.push(file);
+      updateFilesList();
+      fileInput.value = '';
+      
+      console.log(`File added: ${file.name}. Total files: ${selectedFiles.length}`);
+    });
+
+    // Allow auto-add file when selected
+    document.getElementById('compareFileSingle').addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        document.getElementById('addFileBtn').click();
+      }
+    });
+
+    function updateFilesList() {
+      const container = document.getElementById('filesListContainer');
+      const manager = document.getElementById('compareFilesList');
+
+      if (selectedFiles.length === 0) {
+        manager.style.display = 'none';
+        return;
+      }
+
+      manager.style.display = 'block';
+      container.innerHTML = selectedFiles.map((file, index) => `
+        <li class="file-item">
+          <span class="file-info">
+            <strong>${file.name}</strong>
+            <small>${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+          </span>
+          <button type="button" class="remove-file-btn" data-index="${index}">✕</button>
+        </li>
+      `).join('');
+
+      // Add remove event listeners
+      document.querySelectorAll('.remove-file-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const index = parseInt(btn.dataset.index);
+          selectedFiles.splice(index, 1);
+          updateFilesList();
+          console.log(`File removed. Total files: ${selectedFiles.length}`);
+        });
+      });
+    }
+
+    document.getElementById('compareForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      console.log('Submitting comparison with files:', selectedFiles.length);
+      console.log('Files:', selectedFiles.map(f => f.name));
+
+      if (selectedFiles.length < 2) {
+        alert('Add at least 2 PDFs to compare');
+        return;
+      }
+      if (selectedFiles.length > 5) {
+        alert('Maximum 5 files allowed');
+        return;
+      }
+
+      const formData = new FormData();
+      selectedFiles.forEach((file, index) => {
+        console.log(`Appending file ${index + 1}:`, file.name);
+        formData.append('resumes', file);
+      });
+
+      const customKeywords = document.getElementById('compareKeywords').value;
+      if (customKeywords.trim()) {
+        formData.append('customKeywords', customKeywords);
+      }
+
+      document.getElementById('compareLoading').classList.remove('hidden');
+      document.getElementById('compareResult').classList.add('hidden');
+
+      try {
+        const res = await fetch('/compare', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert('Error: ' + data.error);
+          document.getElementById('compareLoading').classList.add('hidden');
+          return;
+        }
+
+        const tbody = document.getElementById('comparisonBody');
+        tbody.innerHTML = data.comparison.map(item => `
+          <tr>
+            <td>${item.filename}</td>
+            <td style="font-weight: bold; color: #2196F3;">${item.score}</td>
+            <td>${item.keywordMatch}</td>
+            <td>${item.sections.join(', ')}</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('compareLoading').classList.add('hidden');
+        document.getElementById('compareResult').classList.remove('hidden');
+      } catch (err) {
+        alert('Error comparing resumes: ' + err.message);
+        document.getElementById('compareLoading').classList.add('hidden');
+      }
+    });
+
+    // Reset Compare
+    document.getElementById('resetCompareBtn').addEventListener('click', () => {
+      document.getElementById('compareForm').reset();
+      document.getElementById('compareFileSingle').value = '';
+      selectedFiles = [];
+      updateFilesList();
+      document.getElementById('compareResult').classList.add('hidden');
+    });
+
+    // ========== Feature 1: Dark Mode ==========
+    const darkModeBtn = document.getElementById('darkModeBtn');
+    const htmlElement = document.documentElement;
+    
+    // Load dark mode preference
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      htmlElement.setAttribute('data-theme', 'dark');
+      darkModeBtn.textContent = '☀️';
+    }
+
+    darkModeBtn.addEventListener('click', () => {
+      const isDark = htmlElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        htmlElement.removeAttribute('data-theme');
+        localStorage.setItem('darkMode', 'disabled');
+        darkModeBtn.textContent = '🌙';
+      } else {
+        htmlElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('darkMode', 'enabled');
+        darkModeBtn.textContent = '☀️';
+      }
+    });
+
+    // ========== Feature 2: History Management ==========
+    const historyBtn = document.getElementById('historyBtn');
+    const historyModal = document.getElementById('historyModal');
+    const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+    historyBtn.addEventListener('click', () => {
+      historyModal.classList.remove('hidden');
+      loadHistory();
+    });
+
+    closeHistoryBtn.addEventListener('click', () => {
+      historyModal.classList.add('hidden');
+    });
+
+    historyModal.addEventListener('click', (e) => {
+      if (e.target === historyModal) {
+        historyModal.classList.add('hidden');
+      }
+    });
+
+    function saveToHistory(data) {
+      let history = JSON.parse(localStorage.getItem('resumeHistory')) || [];
+      const entry = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleString(),
+        score: data.score,
+        filename: 'Resume Analysis',
+        keywords: data.foundKeywords.length,
+        data: data
+      };
+      history.unshift(entry);
+      history = history.slice(0, 20); // Keep last 20
+      localStorage.setItem('resumeHistory', JSON.stringify(history));
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('resumeHistory')) || [];
+      const historyList = document.getElementById('historyList');
+      const noHistory = document.getElementById('noHistory');
+
+      if (history.length === 0) {
+        historyList.innerHTML = '';
+        noHistory.style.display = 'block';
+        return;
+      }
+
+      noHistory.style.display = 'none';
+      historyList.innerHTML = history.map(entry => `
+        <div class="history-item">
+          <div class="history-item-header">
+            <span class="history-score">Score: ${entry.score}/100</span>
+            <span class="history-date">${entry.timestamp}</span>
+          </div>
+          <div class="history-item-details">
+            <small>Keywords matched: ${entry.keywords}</small>
+          </div>
+          <button class="btn-tiny" onclick="viewHistoryDetail(${entry.id})">View</button>
+        </div>
+      `).join('');
+    }
+
+    window.viewHistoryDetail = (id) => {
+      const history = JSON.parse(localStorage.getItem('resumeHistory')) || [];
+      const entry = history.find(e => e.id === id);
+      if (entry) {
+        window.lastResult = entry.data;
+        displayResults(entry.data);
+        historyModal.classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+      }
+    };
+
+    clearHistoryBtn.addEventListener('click', () => {
+      if (confirm('Are you sure? This will delete all saved analyses.')) {
+        localStorage.removeItem('resumeHistory');
+        loadHistory();
+      }
+    });
+
+    // ========== Feature 3: Keyword Density Chart ==========
+    let densityChart = null;
+
+    function displayDensityChart(keywords, foundKeywords) {
+      const ctx = document.getElementById('densityChart');
+      if (!ctx || keywords.length === 0) return;
+
+      const counts = keywords.map(k => foundKeywords.includes(k) ? 1 : 0);
+      
+      if (densityChart) {
+        densityChart.destroy();
+      }
+
+      densityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: keywords.slice(0, 15),
+          datasets: [{
+            label: 'Keywords Found',
+            data: counts.slice(0, 15),
+            backgroundColor: [
+              'rgba(76, 175, 80, 0.7)',
+              'rgba(76, 175, 80, 0.7)',
+              'rgba(76, 175, 80, 0.7)',
+              'rgba(244, 67, 54, 0.7)'
+            ],
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              max: 1,
+              ticks: { callback: (v) => v === 1 ? 'Found' : 'Missing' }
+            }
+          }
+        }
+      });
+    }
+
+    // ========== Feature 4: PDF Export ==========
+    document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+      if (!window.lastResult) return alert('No result to download');
+      
+      const element = document.getElementById('result');
+      const opt = {
+        margin: 10,
+        filename: `resume-report-${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+      alert('PDF downloaded successfully!');
+    });
+
+    // ========== Feature 5: Live Tips ==========
+    const liveTipsDiv = document.getElementById('liveTips');
+    const liveTipsContent = document.getElementById('liveTipsContent');
+    const jobDescriptionInput = document.getElementById('jobDescription');
+    const customKeywordsInput = document.getElementById('customKeywords');
+
+    function generateLiveTips() {
+      const jobDesc = jobDescriptionInput.value.trim().toLowerCase();
+      const customKW = customKeywordsInput.value.trim();
+      const tips = [];
+
+      // Length check
+      if (jobDesc.length < 50) {
+        tips.push('📝 Add more job description details for AI-powered keyword extraction');
+      } else if (jobDesc.length > 2000) {
+        tips.push('✓ Comprehensive job description - great for detailed analysis');
+      }
+
+      // Experience level detection
+      if (jobDesc.includes('senior') || jobDesc.includes('principal') || jobDesc.includes('lead') || jobDesc.includes('director')) {
+        tips.push('💼 This is a senior/leadership role. Highlight: team leadership, strategic decisions, mentoring, business impact.');
+      } else if (jobDesc.includes('junior') || jobDesc.includes('entry') || jobDesc.includes('graduate')) {
+        tips.push('🎓 Entry-level position. Focus on: learning ability, enthusiasm, internships, projects, academic achievements.');
+      } else if (jobDesc.includes('mid-level') || jobDesc.includes('mid level')) {
+        tips.push('📈 Mid-level role. Emphasize: technical expertise, project ownership, problem-solving, growth track record.');
+      }
+
+      // Experience years
+      if (jobDesc.includes('years')) {
+        const match = jobDesc.match(/(\d+)\+?\s*years/);
+        if (match) {
+          tips.push(`⏳ Job requires ${match[1]}+ years experience. Clearly state your years in similar roles.`);
+        }
+      }
+
+      // Soft skills detection
+      if (jobDesc.includes('communication') || jobDesc.includes('collaboration') || jobDesc.includes('teamwork')) {
+        tips.push('👥 Communication & teamwork needed. Mention: cross-team projects, presentations, mentoring others.');
+      }
+
+      if (jobDesc.includes('leadership') || jobDesc.includes('manage')) {
+        tips.push('🎯 Management experience required. Highlight: team size managed, projects led, performance improvements.');
+      }
+
+      if (jobDesc.includes('agile') || jobDesc.includes('scrum') || jobDesc.includes('sprint')) {
+        tips.push('🔄 Agile/Scrum required. Add: sprint experience, standup participation, backlog refinement, retrospectives.');
+      }
+
+      // Technical requirements
+      if (jobDesc.includes('python') || jobDesc.includes('java') || jobDesc.includes('javascript') || jobDesc.includes('c++') || jobDesc.includes('golang')) {
+        tips.push('💻 Programming languages required. Make sure you include your proficiency level for each language.');
+      }
+
+      if (jobDesc.includes('cloud') || jobDesc.includes('aws') || jobDesc.includes('azure') || jobDesc.includes('gcp')) {
+        tips.push('☁️ Cloud skills required. Specify: AWS services (EC2, S3, Lambda), Azure, GCP, or specifics.');
+      }
+
+      if (jobDesc.includes('docker') || jobDesc.includes('kubernetes') || jobDesc.includes('container')) {
+        tips.push('🐳 Containerization experience needed. Detail: Docker images, deployment, orchestration experience.');
+      }
+
+      if (jobDesc.includes('database') || jobDesc.includes('sql') || jobDesc.includes('mongodb')) {
+        tips.push('🗄️ Database skills required. Mention: SQL optimization, NoSQL databases, schema design, query performance.');
+      }
+
+      // Industry-specific
+      if (jobDesc.includes('startup')) {
+        tips.push('🚀 Startup environment. Emphasize: versatility, quick learning, ownership, working in fast-paced teams.');
+      }
+
+      if (jobDesc.includes('security') || jobDesc.includes('compliance')) {
+        tips.push('🔒 Security-focused role. Highlight: secure coding, authentication, data privacy, compliance knowledge.');
+      }
+
+      if (jobDesc.includes('remote') || jobDesc.includes('wfh')) {
+        tips.push('🏠 Remote position. Show: self-motivation, communication skills, timezone flexibility, independent work.');
+      }
+
+      // Custom keywords
+      if (customKW.length > 0) {
+        const kwCount = customKW.split(',').length;
+        tips.push(`🎯 ${kwCount} custom keyword(s) added. Ensure they appear in your resume.`);
+      }
+
+      // Extract and suggest key terms
+      const words = jobDesc.split(/\s+/).filter(w => w.length > 6 && !['which', 'should', 'about', 'would', 'through', 'cannot', 'develop', 'provide', 'between', 'ability'].includes(w));
+      const uniqueKeywords = [...new Set(words)].filter(w => /^[a-z]+$/i.test(w)).slice(0, 6);
+      if (uniqueKeywords.length > 2) {
+        tips.push(`🔍 Key terms: ${uniqueKeywords.join(' • ')}`);
+      }
+
+      // Show/hide tips
+      if (tips.length === 0) {
+        liveTipsDiv.classList.add('hidden');
+      } else {
+        liveTipsDiv.classList.remove('hidden');
+        liveTipsContent.innerHTML = tips.map(t => `<div class="tip-item">${t}</div>`).join('');
+      }
+    }
+
+    jobDescriptionInput.addEventListener('input', generateLiveTips);
+    customKeywordsInput.addEventListener('input', generateLiveTips);
+
+    // Update displayResults to include history saving and density chart
+    const originalDisplayResults = displayResults;
+    window.displayResults = function(data) {
+      originalDisplayResults(data);
+      
+      // Save to history
+      saveToHistory(data);
+
+      // Display density chart
+      const keywords = data.foundKeywords || [];
+      displayDensityChart(keywords, data.foundKeywords);
+    };
+  </script>
+</body>
+</html>

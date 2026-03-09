@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Keywords &amp; Tips — IntelliResume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .ind-btn {
+      padding: 9px 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 500;
+      transition: all 0.25s;
+    }
+    .ind-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .ind-btn.active {
+      background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+      border-color: transparent; color: #fff;
+      box-shadow: 0 4px 16px rgba(0,210,255,0.28);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-wrapper">
+    <div class="bg-glow" style="top:20%;left:25%"></div>
+    <div class="bg-glow" style="top:60%;left:70%;background:radial-gradient(rgba(147,51,234,0.15),rgba(147,51,234,0));opacity:0.3"></div>
+  </div>
+
+  <nav>
+    <div class="logo" onclick="window.location.href='index.html'">IntelliResume</div>
+    <div class="nav-right">
+      <button id="darkModeBtn" class="icon-btn">🌙</button>
+      <button class="btn-text" onclick="window.location.href='index.html'">← Home</button>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-badge">Industry Insights</div>
+      <h1>Keywords <span class="grad-text">&amp; Tips</span></h1>
+      <p>Explore industry-specific keywords, common mistakes, and expert checklists to maximize your ATS score.</p>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="window.location.href='single-analysis.html'">Single Analysis</button>
+      <button class="tab-btn" onclick="window.location.href='compare-resumes.html'">Compare Resumes</button>
+      <button class="tab-btn active">Keywords &amp; Tips</button>
+    </div>
+
+    <!-- Industry selector — each button has a unique ID -->
+    <div class="glass-card">
+      <div class="card-title">Select Your Industry</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="ind-tech"      class="ind-btn active"  onclick="switchIndustry('tech')">💻 Tech</button>
+        <button id="ind-data"      class="ind-btn"         onclick="switchIndustry('data')">📊 Data Science</button>
+        <button id="ind-devops"    class="ind-btn"         onclick="switchIndustry('devops')">⚙️ DevOps</button>
+        <button id="ind-frontend"  class="ind-btn"         onclick="switchIndustry('frontend')">🎨 Frontend</button>
+        <button id="ind-marketing" class="ind-btn"         onclick="switchIndustry('marketing')">📣 Marketing</button>
+        <button id="ind-product"   class="ind-btn"         onclick="switchIndustry('product')">🧭 Product</button>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">Industry Keywords — <span id="industryLabel">Tech &amp; Software</span></div>
+      <div id="keywordList" class="keyword-tags" style="min-height:44px">
+        <span style="color:#64748b;font-size:0.83rem">Loading...</span>
+      </div>
+      <div class="keyword-stats">
+        <span><strong id="kwTotal">0</strong> keywords in this industry</span>
+        <span>Include these naturally in your resume text</span>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">Expert Tips for <span id="tipsLabel">Tech</span></div>
+      <div id="tipsGrid" class="tips-grid"></div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">Common Mistakes to Avoid</div>
+      <div id="mistakesGrid" class="mistakes-grid"></div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">Pre-Submission Checklist</div>
+      <div id="checklistBox" class="checklist-container"></div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">ATS Optimization Guide</div>
+      <div class="ats-tabs">
+        <button id="ats-structure"    class="ats-tab-btn active" onclick="switchAts('structure')">Structure</button>
+        <button id="ats-content"      class="ats-tab-btn"        onclick="switchAts('content')">Content</button>
+        <button id="ats-formatting"   class="ats-tab-btn"        onclick="switchAts('formatting')">Formatting</button>
+        <button id="ats-optimization" class="ats-tab-btn"        onclick="switchAts('optimization')">Optimization</button>
+      </div>
+      <ul id="atsPanel" class="ats-panel active"></ul>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Detail</h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalSummary" style="padding:11px 14px;background:rgba(0,210,255,0.04);border:1px solid rgba(0,210,255,0.14);border-radius:10px;font-size:0.85rem;color:#94a3b8;margin-bottom:14px;line-height:1.6"></div>
+        <div id="modalBody" style="font-size:0.86rem;color:#94a3b8;line-height:1.75"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ── Data ─────────────────────────────────────────────── */
+  const DATA = {
+    tech: {
+      label: 'Tech & Software',
+      tips: [
+        { t: 'Lead with Impact Numbers', b: 'Quantify everything: "Reduced API latency by 40%", "Led a team of 8 engineers", "Delivered 3 features per sprint". Numbers make ATS and recruiters notice.' },
+        { t: "Match the Job's Tech Stack", b: 'Mirror the exact technologies in the job description. ATS systems do literal text matching — synonyms will fail. If the job says "Node.js", write Node.js, not NodeJS.' },
+        { t: 'Use Strong Action Verbs', b: 'Start every bullet point with: Built, Architected, Optimized, Deployed, Designed, Integrated, Automated, Migrated, Refactored, Launched.' },
+        { t: 'Include GitHub / Portfolio Link', b: 'Link to live projects or an active GitHub profile. Recruiters check contribution history as independent proof of skill level.' },
+        { t: 'Certifications Signal Cloud Depth', b: 'AWS Solutions Architect, GCP Professional, Azure, Kubernetes CKA — these credentials are actively searched by technical recruiters.' },
+        { t: "Feature Your Skills Section Prominently", b: 'Place your Skills section near the top of the resume. ATS parsers scan this section first and weight it most heavily in ranking.' },
+      ],
+      mistakes: [
+        { t: 'Vague Objective Statement', d: 'Replace "Seeking a challenging role" with a 3-line professional summary packed with your top technical keywords and biggest wins.' },
+        { t: 'Generic Bullet Points', d: '"Worked on backend development" tells nothing. State the exact technology, the scale (requests/day, users, data volume), and the measurable outcome.' },
+        { t: 'Missing Employment Dates', d: 'Every position needs month/year start and end dates. Missing dates are a major ATS red flag and often cause automatic rejection.' },
+        { t: 'Graphics and Tables in Resume', d: 'Charts, icons, skill bars, and tables break ATS parsers completely. All key information must appear as plain readable text.' },
+        { t: 'Wrong File Format', d: 'Always submit PDF unless the posting explicitly requests .docx. PDF preserves your formatting across every operating system and ATS.' },
+        { t: 'Inflated Skills Section', d: 'Listing 40+ skills appears dishonest. Stick to 15–20 technologies you can genuinely discuss and demonstrate in a technical interview.' },
+      ],
+      checklist: [
+        'Contact info at very top — name, email, phone, LinkedIn, GitHub URL',
+        'Professional summary uses keywords from the specific job description',
+        'Each role has 3–5 bullet points with quantified achievements',
+        'Dedicated Skills section lists all relevant languages, frameworks, and tools',
+        'Education includes degree, institution name, and graduation year',
+        'Resume length: 1 page for 0–5 years, max 2 pages for 5+ years',
+        'No photos, multi-column layouts, tables, graphics, or skill bars',
+        'File saved as PDF, named FirstName_LastName_Resume.pdf',
+        'Zero typos — spell-checked by at least one additional tool or person',
+        'All external links (GitHub, portfolio) verified as working',
+      ]
+    },
+    data: {
+      label: 'Data Science',
+      tips: [
+        { t: 'Quote Model Performance Metrics', b: 'State specific metrics: accuracy, F1, AUC, RMSE, or business impact. "Model improved churn prediction by 23%, saving $800K annually" is powerful.' },
+        { t: 'Show the Full ML Pipeline', b: 'Cover data ingestion → cleaning → EDA → feature engineering → modeling → deployment → monitoring. End-to-end ownership is the most valued signal.' },
+        { t: 'Name Dataset Scale', b: 'Reference data volumes explicitly: "Processed 10M daily events", "Trained on 500K labeled images". Scale signals production experience over academic projects.' },
+        { t: 'Link Kaggle Rankings or Papers', b: 'Kaggle competition rankings, research publications, or technical Medium articles demonstrate real-world depth that coursework alone cannot prove.' },
+        { t: 'Lead with Business Value', b: 'Frame everything as business outcome: "Automated fraud detection, saving $2M annually and eliminating 70% of manual review time."' },
+        { t: 'Include Cloud + MLOps Tools', b: 'SageMaker, MLflow, Kubeflow, Airflow, Databricks — MLOps proficiency is equally valued as modeling skill in senior data science roles.' },
+      ],
+      mistakes: [
+        { t: 'Just Listing Tools', d: 'Show what you built and what it achieved. "Used Python" is meaningless without the problem solved, the scale it operated at, and the business impact.' },
+        { t: 'Ignoring SQL Proficiency', d: 'SQL is used daily in every data science role. If you know it, feature it prominently — senior ML roles still require heavy data wrangling.' },
+        { t: 'No Business Context Given', d: 'Describe the business problem you solved, not just the algorithm used. Hiring managers are often non-technical and need to understand the "so what".' },
+        { t: 'Notebooks Only, No Deployment', d: 'Show models reached production. Docker, REST APIs, model monitoring, and MLOps knowledge are key differentiators for senior roles.' },
+        { t: 'Vague Accuracy Claims', d: '"High accuracy model" is meaningless. State the baseline you beat, the exact improvement, and the metric used (F1, AUC, precision at recall).' },
+        { t: 'Too Academic', d: 'Balance papers and research with practical, deployed, revenue-generating work. Industry values outcomes over theoretical depth alone.' },
+      ],
+      checklist: [
+        'Programming languages — Python, R, SQL, Scala — listed prominently',
+        'ML frameworks — scikit-learn, TensorFlow, PyTorch, XGBoost — included',
+        'At least one end-to-end ML project with quantified business outcome',
+        'Data engineering tools — Spark, Airflow, dbt, Kafka — mentioned',
+        'Cloud platform with specific services (SageMaker, BigQuery, Databricks)',
+        'Visualization tools — Tableau, Power BI, matplotlib, Plotly — listed',
+        'Statistical methods — regression, A/B testing, hypothesis testing — included',
+        'Model performance metrics quoted for at least 2–3 projects',
+        'GitHub or Kaggle profile with active notebooks linked',
+        'Education lists relevant thesis topic or major coursework',
+      ]
+    },
+    devops: {
+      label: 'DevOps / SRE',
+      tips: [
+        { t: 'Quantify Reliability and Speed', b: '"Maintained 99.99% uptime for 200-node cluster", "Reduced deployment time from 2 hours to 8 minutes", "Cut infrastructure cost 35% via right-sizing and reserved instances".' },
+        { t: 'Show the Full DevOps Loop', b: 'Cover source control → CI/CD → IaC → monitoring → alerting → incident response → post-mortem. Full pipeline ownership is prized at every level.' },
+        { t: 'Certifications Open Doors', b: 'AWS Solutions Architect, CKA (Certified Kubernetes Administrator), Terraform Associate, and GCP Professional DevOps Engineer are actively screened.' },
+        { t: 'Mention On-Call Experience', b: 'DevOps/SRE roles require 24/7 ownership. Listing on-call rotations and MTTR improvements signals production readiness to hiring managers.' },
+        { t: 'Security Is Now Required', b: 'IAM policies, secrets management (Vault, AWS Secrets Manager), network policies, SAST, container scanning — DevSecOps is the modern standard.' },
+        { t: 'Open Source Contributions Stand Out', b: 'Contributing to Kubernetes, Terraform providers, or popular Helm charts signals initiative and deep understanding of the ecosystem.' },
+      ],
+      mistakes: [
+        { t: 'No Scale Context Provided', d: '"Managed Kubernetes cluster" vs "Managed 200-node EKS cluster serving 50M requests/day across 3 regions" signal very different seniority levels.' },
+        { t: 'Tool List Without Context', d: "Don't just list every DevOps tool you've touched. Show why each was chosen, what problem it solved, and what the outcome was." },
+        { t: 'Missing IaC Experience', d: 'Terraform or AWS CDK is now table stakes for senior DevOps engineers. If you use IaC, make it prominent with specific modules built.' },
+        { t: 'No SRE Metrics Quoted', d: 'MTTR, MTTD, deployment frequency, change failure rate — include these four DORA metrics to speak the language of modern reliability engineering.' },
+        { t: 'No Major Incident Story', d: 'Briefly describing a major incident you detected, resolved, and prevented recurrence of shows crisis handling depth and ownership mentality.' },
+        { t: 'Weak Security Signals', d: 'List IAM policy design, secrets management tools, vulnerability scanning pipelines, and any compliance work (SOC2, PCI, GDPR, HIPAA).' },
+      ],
+      checklist: [
+        'Cloud platforms with specific services — EC2, EKS, Lambda, RDS, S3, VPC',
+        'Container orchestration — Kubernetes, ECS, Docker, Helm chart authoring',
+        'CI/CD pipelines — Jenkins, GitLab CI, GitHub Actions, ArgoCD, Tekton',
+        'IaC tools — Terraform, Pulumi, CloudFormation, Ansible',
+        'Monitoring stack — Prometheus, Grafana, Datadog, PagerDuty',
+        'Scripting languages — Bash, Python, Go',
+        'Uptime or SLA metrics quoted for systems you owned',
+        'Deployment frequency or lead time improvements quantified',
+        'Security practices — IAM, Vault, SAST, container image scanning',
+        'Relevant certifications clearly noted',
+      ]
+    },
+    frontend: {
+      label: 'Frontend Development',
+      tips: [
+        { t: 'Portfolio Links Are Mandatory', b: 'Live deployed projects beat descriptions every time. Every project entry should include a working URL to the deployed application.' },
+        { t: 'Show Performance Optimization', b: '"Reduced LCP from 4.2s to 1.1s using lazy loading and image optimization", "Cut bundle size 60% with code splitting and tree shaking".' },
+        { t: 'Accessibility Signals Seniority', b: 'WCAG 2.1 AA compliance, aria attributes, keyboard navigation, and screen reader testing separates professional developers from novices.' },
+        { t: 'Bridge Design and Engineering', b: 'Mention Figma-to-code workflows, design systems built or maintained, and collaboration with UX designers. This is a top frontend differentiator.' },
+        { t: 'Demonstrate Testing Discipline', b: 'List Jest, Cypress, Playwright, React Testing Library. Tested code signals production-grade engineering and earns respect from senior engineers.' },
+        { t: 'Name Modern State Management', b: 'Zustand, Redux Toolkit, React Query, Jotai, TanStack Query — naming current ecosystem tools shows you actively keep your skills current.' },
+      ],
+      mistakes: [
+        { t: 'No Live Project Examples', d: 'Every project must have a deployed URL. GitHub repos alone are far less impressive than a working application anyone can open and use.' },
+        { t: 'CSS Treated as Afterthought', d: 'Frontend developers must demonstrate strong CSS skills. Explicitly mention Tailwind, CSS Modules, animation libraries, and responsive design patterns.' },
+        { t: 'No Performance Metrics Shown', d: 'Core Web Vitals (LCP, CLS, FID/INP) are now standard interview topics. Show you optimize proactively for real user experience, not just feature delivery.' },
+        { t: 'Mobile Experience Not Mentioned', d: 'State your responsive design approach, mobile-first development methodology, and any PWA or React Native experience explicitly.' },
+        { t: 'Stale Tech Stack Only', d: 'jQuery-only experience severely limits opportunities. Demonstrate proficiency in at least one modern framework plus its surrounding ecosystem.' },
+        { t: 'No Testing Frameworks Listed', d: 'Frontend testing is now a universal expectation for mid to senior roles. Name your testing frameworks, describe your approach, mention coverage targets.' },
+      ],
+      checklist: [
+        'Portfolio website URL linked prominently at top of resume',
+        'Core framework expertise — React, Vue, Angular, Svelte, Next.js',
+        'CSS approach specified — Tailwind, CSS Modules, Styled Components',
+        'Build tooling included — Vite, Webpack, Next.js, Astro',
+        'Testing frameworks listed — Jest, Cypress, Playwright, React Testing Library',
+        'At least one performance improvement quantified (LCP, bundle size)',
+        'Accessibility experience mentioned — WCAG, aria, keyboard navigation',
+        'Version control and CI/CD noted — GitHub Actions, Vercel, Netlify deploy',
+        'Design collaboration tools — Figma, Zeplin, Storybook',
+        'Minimum 2 live deployed projects linked with tech stack described',
+      ]
+    },
+    marketing: {
+      label: 'Marketing',
+      tips: [
+        { t: 'Open Every Role with Revenue Impact', b: '"Generated $1.2M pipeline in Q3", "Grew organic traffic 340% YoY", "Improved ROAS from 2.1x to 4.8x through creative and audience testing".' },
+        { t: 'Martech Fluency is Table Stakes', b: 'List HubSpot, Salesforce, GA4, Looker, Klaviyo, Marketo explicitly. Tool competency directly signals how fast you can contribute from day one.' },
+        { t: 'Show Multi-Channel Breadth', b: 'Cover paid, organic, email, social, and content in your experience. Multi-channel marketers are far more hireable than single-channel specialists.' },
+        { t: 'Demonstrate Data Literacy', b: 'Even creative roles require analytics fluency. Mention SQL queries you can write, BI dashboards you build, and hypotheses you test with data.' },
+        { t: 'Balance Brand and Performance', b: 'Show both brand building and performance marketing. Pure creative or pure growth-only experience is limiting as roles increasingly require both.' },
+        { t: 'Include Attribution Models', b: 'UTM tracking, multi-touch attribution, or marketing mix modeling signals that you measure actual impact, not just activity.' },
+      ],
+      mistakes: [
+        { t: 'Vanity Metrics Only', d: 'Impressions, followers, and likes with no business context are meaningless. Tie everything to leads, revenue, pipeline, retention, or customer acquisition.' },
+        { t: 'Full Martech Stack Missing', d: 'Marketing technology fluency is screened in the first 30 seconds. List every platform used professionally — CRMs, ESPs, ad platforms, and analytics tools.' },
+        { t: 'Job Duties Instead of Wins', d: '"Managed social media" is a duty. "Grew LinkedIn followers 180% to 45K in 6 months, 12% avg engagement rate (3x industry benchmark)" is an achievement.' },
+        { t: 'Budget Scale Never Mentioned', d: 'State the ad spend you managed. $5K/month and $500K/month campaigns signal very different seniority, strategic involvement, and scope of ownership.' },
+        { t: 'No Content Portfolio Links', d: 'Content marketers must link to published blog posts, case studies, campaign landing pages, or whitepapers. Let your actual work make the case.' },
+        { t: 'SEO Completely Absent', d: 'Even generalist marketers are expected to understand keyword research, on-page optimization, and Core Web Vitals. Make your SEO knowledge visible.' },
+      ],
+      checklist: [
+        'All metrics quantified — CTR, ROAS, CAC, LTV, conversion rates, open rates',
+        'Paid advertising platforms listed — Google Ads, Meta, LinkedIn, TikTok Ads',
+        'Marketing automation tools included — HubSpot, Marketo, Klaviyo, Pardot',
+        'Analytics platforms noted — GA4, Mixpanel, Amplitude, Tableau, Looker',
+        'SEO/SEM results quantified — ranking improvements, organic traffic growth %',
+        'Email metrics mentioned — open rate, click rate, list size, growth rate',
+        'Content types specified — blog, whitepaper, case study, video, webinar',
+        'Ad budget scale mentioned for at least one major campaign or program',
+        'A/B testing and CRO experiments described with before/after results',
+        'Published work portfolio or links provided',
+      ]
+    },
+    product: {
+      label: 'Product Management',
+      tips: [
+        { t: 'Outcomes Over Outputs Always', b: '"Shipped 12 features" is weak. "Increased DAU 28% and reduced 30-day churn 15% through a personalization and onboarding initiative" is a PM resume.' },
+        { t: 'Show the Full Discovery-Delivery Loop', b: 'User research → problem framing → prioritization → roadmap → sprint planning → launch → retrospective → iteration. Owning the full loop is the PM superpower.' },
+        { t: 'Name Your Metrics Frameworks', b: 'HEART, AARRR, North Star Metric, OKRs, RICE scoring — naming frameworks signals structured product thinking that separates senior PMs from junior ones.' },
+        { t: 'Highlight Cross-Functional Leadership', b: 'Describe leading engineers, designers, marketing, and sales through major launches without direct authority. Influence without authority is the PM superpower.' },
+        { t: 'Signal Technical Depth', b: 'Mention API design discussions, data schema decisions, or system design reviews participated in. Technical PMs earn engineering trust faster and ship better products.' },
+        { t: 'Include GTM Ownership', b: 'Pricing decisions, launch planning, sales enablement, and analyst briefings in your experience show you own the full product lifecycle, not just delivery.' },
+      ],
+      mistakes: [
+        { t: 'Feature Lists Instead of Outcomes', d: 'Every bullet needs the user problem addressed and a measurable result achieved. Features are outputs; user and business outcomes are what PMs are actually hired for.' },
+        { t: 'Zero Hard Metrics Quoted', d: 'Product management is a metrics-driven discipline. Every role description should include at least 2–3 hard numbers: DAU, revenue impact, NPS change, churn reduction.' },
+        { t: 'Process and Discovery Invisible', d: 'Describe your discovery process: user interviews run, competitive analyses done, A/B tests designed, JTBD framework applied, and hypotheses validated.' },
+        { t: 'No Technical Credibility Signals', d: 'PMs who read API documentation, understand database queries, and participate in system design earn faster engineering trust and ship significantly better products.' },
+        { t: 'Business Impact Missing', d: "Show your product drove revenue, reduced churn, or cut operational costs — not just improved satisfaction scores. Boards care about business outcomes, not NPS alone." },
+        { t: 'Failures Never Mentioned', d: 'Briefly describing a failed launch and the lessons learned signals self-awareness and the kind of intellectual honesty that strong product organizations look for.' },
+      ],
+      checklist: [
+        'Each role has product scope — B2B/B2C, company stage, user count, market',
+        'Business outcomes tied to each initiative — revenue, retention, growth',
+        'Methodologies mentioned — Agile, Scrum, Shape Up, Design Thinking',
+        'PM tools listed — Jira, Confluence, Amplitude, Mixpanel, Figma, Notion',
+        'User research experience described — interviews, surveys, usability tests',
+        'A/B testing and experimentation results mentioned',
+        'Cross-functional leadership described — eng, design, marketing, sales',
+        'At least one full GTM launch described end-to-end',
+        'Technical background demonstrated — APIs, data, system design familiarity',
+        'Relevant certifications — CSPO, PMC, Pragmatic, Reforge',
+      ]
+    }
+  };
+
+  const ATS_TIPS = {
+    structure: [
+      '<strong>Section order matters:</strong> Contact Info → Summary → Experience → Skills → Education → Projects / Certifications.',
+      '<strong>Use only standard section headers.</strong> "Work Experience" not "My Career Story". ATS fails silently on custom or creative headers.',
+      '<strong>Reverse chronological always.</strong> Most recent position first in every section — experience, education, projects.',
+      '<strong>Consistent date format throughout.</strong> Use MM/YYYY everywhere. Never mix "Jan 2023" and "01/2023" in the same resume.',
+      '<strong>Single-column layout only.</strong> Two-column and multi-column formats break most enterprise ATS parsers completely and silently.',
+      '<strong>No content in page headers or footers.</strong> ATS cannot read anything in those zones. Keep everything in the main body.',
+    ],
+    content: [
+      '<strong>Mirror job description language exactly.</strong> Use the same terms the job posting uses — not synonyms, not abbreviations.',
+      '<strong>Quantify every achievement.</strong> Numbers, percentages, dollar values, team sizes, and timeframes all rank higher in ATS scoring.',
+      '<strong>Active voice + action verbs every bullet.</strong> Built, Led, Reduced, Scaled, Delivered, Launched, Automated, Migrated.',
+      '<strong>Skills section is highest-weighted by ATS.</strong> List all technical skills explicitly. ATS scans this section first and most aggressively.',
+      '<strong>Spell out abbreviations on first use.</strong> "Machine Learning (ML)" before using ML alone. ATS may not match abbreviations to full terms.',
+      '<strong>Avoid keyword stuffing.</strong> Natural sentence usage of keywords scores higher than a dense list at the bottom of your resume.',
+    ],
+    formatting: [
+      '<strong>Font size 10–12pt body text.</strong> Arial, Calibri, Georgia, or Garamond. No decorative, script, or novelty fonts ever.',
+      '<strong>Margins 0.5–1 inch all sides.</strong> Too narrow looks cramped. Too wide wastes valuable white space you could use for content.',
+      '<strong>No tables, text boxes, or embedded objects.</strong> These are completely invisible to ATS parsers and cause parsing failures.',
+      '<strong>No photos, icons, or skill-level bars.</strong> Profile photos and rating graphics are automatic ATS failures in every system.',
+      '<strong>File format: PDF</strong> unless the posting specifically requires .docx. PDF preserves your formatting across every platform.',
+      '<strong>Professional file name.</strong> FirstName_LastName_Resume.pdf — not "Resume_FINAL_v3_UPDATED_2024.pdf".',
+    ],
+    optimization: [
+      '<strong>Tailor for every single application.</strong> Swap in the exact keywords from each specific job posting before submitting.',
+      '<strong>Run the plain text test.</strong> Paste your resume into Notepad. If it looks scrambled without formatting, ATS sees the same mess.',
+      '<strong>Always include your location.</strong> ATS filters by location radius. Remote workers should still list a base city and country.',
+      '<strong>LinkedIn must match your resume exactly.</strong> Recruiters always cross-reference. Date or title inconsistencies create immediate doubt.',
+      '<strong>Length: 1 page under 5 years, 2 pages maximum over 5 years.</strong> Never 3 pages. Never. Ever.',
+      '<strong>Review and update every 6 months.</strong> Keep a master resume current even when not actively searching. Good opportunities appear suddenly.',
+    ]
+  };
+
+  /* ── State ─────────────────────────────────────────────── */
+  let currentInd = 'tech';
+  let currentAts = 'structure';
+
+  /* ── Init ──────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    loadIndustry('tech');
+    renderAts('structure');
+    initDarkMode();
+  });
+
+  /* ── Industry ──────────────────────────────────────────── */
+  function switchIndustry(key) {
+    document.querySelectorAll('.ind-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('ind-' + key).classList.add('active');
+    currentInd = key;
+    loadIndustry(key);
+  }
+
+  function loadIndustry(key) {
+    const d = DATA[key];
+    if (!d) return;
+    document.getElementById('industryLabel').textContent = d.label;
+    document.getElementById('tipsLabel').textContent = d.label;
+
+    // Fetch keywords from server
+    fetch('/keywords/' + key)
+      .then(r => { if (!r.ok) throw 0; return r.json(); })
+      .then(data => renderKeywords(data.keywords || []))
+      .catch(() => {
+        document.getElementById('keywordList').innerHTML =
+          '<span style="color:#64748b;font-size:0.82rem">⚠ Server offline — run <code style="background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px">node server.js</code> to load live keywords.</span>';
+        document.getElementById('kwTotal').textContent = '—';
+      });
+
+    renderTips(d.tips);
+    renderMistakes(d.mistakes);
+    renderChecklist(d.checklist);
+  }
+
+  function renderKeywords(kws) {
+    document.getElementById('kwTotal').textContent = kws.length;
+    document.getElementById('keywordList').innerHTML = kws.length
+      ? kws.map(k => `<span class="keyword-tag section">${escHtml(k)}</span>`).join('')
+      : '<span style="color:#64748b;font-size:0.83rem">No keywords returned from server</span>';
+  }
+
+  /* ── Tips ──────────────────────────────────────────────── */
+  function renderTips(tips) {
+    document.getElementById('tipsGrid').innerHTML = tips.map(tip => {
+      const preview = tip.b.substring(0, 90) + '...';
+      return `<div class="tip-card" data-title="${escAttr(tip.t)}" data-body="${escAttr(tip.b)}" onclick="openModal(this)">
+        <h4>${escHtml(tip.t)}</h4>
+        <p>${escHtml(preview)}</p>
+        <div class="tip-hint">Click for full detail →</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Mistakes ──────────────────────────────────────────── */
+  function renderMistakes(mistakes) {
+    document.getElementById('mistakesGrid').innerHTML = mistakes.map(m => {
+      const preview = m.d.substring(0, 100) + '...';
+      return `<div class="mistake-card" data-title="${escAttr(m.t)}" data-body="${escAttr(m.d)}" onclick="openModal(this)">
+        <div class="mistake-title">✗ ${escHtml(m.t)}</div>
+        <div class="mistake-description">${escHtml(preview)}</div>
+        <div class="mistake-expand-indicator">Click to see the fix →</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Checklist ─────────────────────────────────────────── */
+  function renderChecklist(items) {
+    document.getElementById('checklistBox').innerHTML = items.map((item, i) =>
+      `<div class="checklist-item-wrapper" onclick="toggleCheck(this)">
+        <div class="checklist-checkbox">✓</div>
+        <span class="checklist-text">${escHtml(item)}</span>
+        <span class="checklist-expand-icon">→</span>
+      </div>`
+    ).join('');
+  }
+
+  function toggleCheck(el) {
+    const cb = el.querySelector('.checklist-checkbox');
+    const checked = cb.getAttribute('data-on') === '1';
+    if (checked) {
+      cb.removeAttribute('data-on');
+      cb.style.cssText = 'color:transparent';
+      el.style.borderColor = '';
+    } else {
+      cb.setAttribute('data-on', '1');
+      cb.style.cssText = 'background:linear-gradient(135deg,#4ade80,#22c55e);border-color:#4ade80;color:#000';
+      el.style.borderColor = 'rgba(74,222,128,0.3)';
+    }
+  }
+
+  /* ── ATS Tabs ──────────────────────────────────────────── */
+  function switchAts(key) {
+    document.querySelectorAll('.ats-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('ats-' + key).classList.add('active');
+    renderAts(key);
+  }
+  function renderAts(key) {
+    document.getElementById('atsPanel').innerHTML =
+      (ATS_TIPS[key] || []).map(t => `<li>${t}</li>`).join('');
+  }
+
+  /* ── Modal — reads from data-* attributes, uses textContent ── */
+  function openModal(el) {
+    const title = el.getAttribute('data-title') || '';
+    const body  = el.getAttribute('data-body')  || '';
+    document.getElementById('modalTitle').textContent   = title;
+    document.getElementById('modalSummary').textContent = title;
+    document.getElementById('modalBody').textContent    = body;
+    document.getElementById('detailModal').classList.remove('hidden');
+  }
+  function closeModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+  }
+
+  /* ── Helpers ───────────────────────────────────────────── */
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* ── Dark Mode ─────────────────────────────────────────── */
+  function initDarkMode() {
+    const btn = document.getElementById('darkModeBtn');
+    if (localStorage.getItem('darkMode') === 'on') {
+      document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+      btn.textContent = '☀️';
+    }
+    btn.addEventListener('click', () => {
+      const on = localStorage.getItem('darkMode') === 'on';
+      if (on) { document.body.style.filter=''; localStorage.setItem('darkMode','off'); btn.textContent='🌙'; }
+      else { document.body.style.filter='invert(1) hue-rotate(180deg)'; localStorage.setItem('darkMode','on'); btn.textContent='☀️'; }
+    });
+  }
+  </script>
+</body>
+</html>
